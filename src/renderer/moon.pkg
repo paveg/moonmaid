@@ -1,5 +1,6 @@
 import {
   "paveg/moonmaid/types",
+  "paveg/moonmaid/animation",
 }
 
 import {
