@@ -26,7 +26,7 @@ Inspired by [Mermaid](https://mermaid.js.org/), moonmaid takes a different archi
 
 ```
 moonmaid/
-├── core/            ← MoonBit: parser, data structures, layout, animation
+├── core/            ← MoonBit: parser, data structures, animation
 ├── renderer/        ← MoonBit: Virtual SVG Tree generation, diffing
 ├── wasm-bridge/     ← TypeScript: WASM↔DOM thin glue layer
 ├── remark-plugin/   ← TypeScript: remark-moonmaid for Markdown integration
@@ -34,12 +34,22 @@ moonmaid/
 └── docs/            ← Specs, ADRs, acknowledgements
 ```
 
+### Companion Packages (separate MoonBit packages, published to mooncakes.io)
+
+```
+paveg/moonmaid-layout-tree/      ← Reingold-Tilford tree layout (new)
+paveg/moonmaid-layout-sugiyama/  ← Sugiyama hierarchical layout (referencing diago's Railway engine)
+paveg/moonmaid-layout-force/     ← Force-Directed layout (Phase 3, new)
+```
+
+These layout packages are general-purpose and independently usable, contributing to the MoonBit ecosystem beyond moonmaid.
+
 ### Data Flow
 
 ```
 DSL string
   → core/parser: AST generation
-  → core/layout: coordinate calculation (tree layout, force-directed, etc.)
+  → layout packages: coordinate calculation (tree layout, Sugiyama, etc.)
   → renderer: Virtual SVG Tree generation
   → renderer: diff against previous frame
   → wasm-bridge: apply diff as batched DOM operations
@@ -48,11 +58,15 @@ DSL string
 ### Package Dependencies
 
 ```
+moonmaid-layout-tree ─┐
+moonmaid-layout-sugiyama ─┤
+                          ▼
 core ← renderer ← wasm-bridge ← remark-plugin
                                ← web-editor
 ```
 
-- `core`: zero external dependencies (pure MoonBit)
+- `moonmaid-layout-*`: zero external dependencies, independently publishable
+- `core`: depends on layout packages for coordinate calculation
 - `renderer`: depends only on `core`
 - `wasm-bridge`: consumes WASM output from `renderer`
 - `remark-plugin` and `web-editor`: access WASM through `wasm-bridge`
@@ -208,39 +222,67 @@ tree.insert(7)  // → AnimationStep recorded
 
 ## Layout Engine
 
-Self-implemented in MoonBit. No ELK.js dependency.
+### Ecosystem Reuse Strategy
+
+Analysis of existing MoonBit libraries informed the layout strategy:
+
+| Library | Assessment | Decision |
+|---|---|---|
+| **[diago](https://github.com/moonbit-community/diago)** (v0.2.4) | Production-ready. Sugiyama self-implementation in Railway engine (~130k LOC). Trait-separated layout engine. SVG renderer is D2-agnostic. | **Reference for Sugiyama**. Extract and re-implement as independent package. |
+| **[vg](https://github.com/moonbit-community/vg)** (v0.1.3) | Experimental. SVG generation works but no Virtual SVG Tree diffing. | **Not used**. moonmaid needs diffing-capable SVG generation. |
+| **[NetworkX](https://github.com/moonbit-community/NetworkX)** (v0.1.4) | Experimental. Basic graph + DFS/BFS/Dijkstra. No tree structures. | **Not used**. moonmaid's graph model needs animation-aware extensions. |
+
+### Companion Layout Packages
+
+Layout algorithms are published as independent MoonBit packages to mooncakes.io, contributing to the MoonBit ecosystem.
+
+| Package | Algorithm | Source |
+|---|---|---|
+| `paveg/moonmaid-layout-tree` | Reingold-Tilford | **New implementation** (no existing MoonBit implementation found) |
+| `paveg/moonmaid-layout-sugiyama` | Sugiyama (layered) | **Re-implementation referencing diago's Railway engine** |
+| `paveg/moonmaid-layout-force` | Force-Directed | **New implementation** (Phase 3) |
+
+Each package:
+- Has zero external dependencies (pure MoonBit)
+- Implements the shared `Layout` trait
+- Is independently testable and publishable
+- Can be used outside moonmaid
 
 ### Layout Algorithms by Diagram Type
 
-| Diagram Type | Algorithm | Notes |
+| Diagram Type | Algorithm | Package |
 |---|---|---|
-| **Tree** | Reingold-Tilford | Standard compact tree layout. Binary-optimized, extensible to n-ary |
-| **Graph (directed)** | Sugiyama (layered) | Hierarchical layout for DAGs with edge crossing minimization |
-| **Graph (undirected)** | Force-Directed | Repulsion/attraction force balance. General purpose |
-| **Array / Linear** | Fixed Grid | Horizontal equal-spacing with index labels |
-| **Hash table** | Bucket Column + Chain | Vertical bucket array, horizontal chaining on collision |
+| **Tree** | Reingold-Tilford | `moonmaid-layout-tree` |
+| **Graph (directed)** | Sugiyama (layered) | `moonmaid-layout-sugiyama` |
+| **Graph (undirected)** | Force-Directed | `moonmaid-layout-force` |
+| **Array / Linear** | Fixed Grid | `core` (trivial, no separate package) |
+| **Hash table** | Bucket Column + Chain | `core` (trivial, no separate package) |
 | **State transition** | Sugiyama or Force-Directed | Auto-selected based on state count |
-| **Flowchart** | Sugiyama | Top-to-bottom hierarchical flow |
+| **Flowchart** | Sugiyama | `moonmaid-layout-sugiyama` |
 
 ### Implementation Phases
 
 ```
-Phase 1: Fixed Grid (array) + Reingold-Tilford (tree)
+Phase 1: Fixed Grid (array, core) + Reingold-Tilford (moonmaid-layout-tree)
   → Simplest to implement and test. Immediately useful for learning.
 
-Phase 2: Sugiyama (graph / flowchart / state transition)
-  → 4-step layered layout:
-    1. Cycle removal
+Phase 2: Sugiyama (moonmaid-layout-sugiyama)
+  → Reference diago's Railway engine for the 5-step implementation:
+    1. Cycle removal (MFAS)
     2. Layer assignment
-    3. Crossing minimization (barycenter method)
+    3. Crossing minimization (barycenter / median heuristic)
     4. Coordinate assignment
+    5. Post-processing
+  → Covers: directed graphs, flowcharts, state transition diagrams
 
-Phase 3: Force-Directed (general graph)
+Phase 3: Force-Directed (moonmaid-layout-force)
   → Good synergy with animation but heavier implementation.
   → Phase 1-2 covers sufficient use cases first.
 ```
 
 ### Layout Interface
+
+Shared across all layout packages:
 
 ```moonbit
 trait Layout {
@@ -492,3 +534,5 @@ Mermaid's test cases serve as reference for coverage targets (re-designed for mo
 ## Acknowledgements
 
 moonmaid is inspired by [Mermaid](https://mermaid.js.org/) — the pioneering tool that made text-based diagramming accessible to developers worldwide. We stand on the shoulders of the Mermaid team's work and are grateful for the ecosystem they built. moonmaid takes a different path, focusing on algorithm and data structure visualization with MoonBit, but the spirit of "diagrams from text" lives on.
+
+We also thank [diago](https://github.com/moonbit-community/diago) for demonstrating what's possible with MoonBit in the diagram space. diago's Railway engine and Sugiyama implementation served as a valuable reference for moonmaid's layout algorithms. The MoonBit community's work on [vg](https://github.com/moonbit-community/vg) and [NetworkX](https://github.com/moonbit-community/NetworkX) also informed our design decisions.
