@@ -4,6 +4,7 @@ pub(all) enum Diagram {
   ArrayDiagram(ArrayDef)
   TreeDiagram(TreeDef)
   AnimatedTreeDiagram(TreeDef)
+  AnimatedArrayDiagram(ArrayAnimDef)
 } derive(Show, Eq)
 
 ///|
@@ -188,4 +189,20 @@ pub(all) struct AnimationStep {
 /// An ordered sequence of animation steps.
 pub(all) struct AnimationTimeline {
   steps : Array[AnimationStep]
+} derive(Show, Eq)
+
+///|
+/// Sort algorithm variant for animated array diagrams.
+pub(all) enum SortAlgorithm {
+  Bubble
+  Insertion
+  Selection
+  Quick
+} derive(Show, Eq)
+
+///|
+/// Animated array diagram definition.
+pub(all) struct ArrayAnimDef {
+  elements : Array[Int]
+  algorithm : SortAlgorithm
 } derive(Show, Eq)

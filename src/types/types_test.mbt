@@ -20,6 +20,28 @@ test "AnimationTimeline empty" {
 }
 
 ///|
+test "ArrayAnimDef construction" {
+  let def : @types.ArrayAnimDef = {
+    elements: [3, 1, 4],
+    algorithm: @types.SortAlgorithm::Bubble,
+  }
+  assert_eq(def.elements, [3, 1, 4])
+  assert_eq(def.algorithm, @types.SortAlgorithm::Bubble)
+}
+
+///|
+test "SortAlgorithm all variants" {
+  assert_eq(@types.SortAlgorithm::Bubble, @types.SortAlgorithm::Bubble)
+  assert_eq(@types.SortAlgorithm::Insertion, @types.SortAlgorithm::Insertion)
+  assert_eq(@types.SortAlgorithm::Selection, @types.SortAlgorithm::Selection)
+  assert_eq(@types.SortAlgorithm::Quick, @types.SortAlgorithm::Quick)
+  inspect(@types.SortAlgorithm::Bubble, content="Bubble")
+  inspect(@types.SortAlgorithm::Insertion, content="Insertion")
+  inspect(@types.SortAlgorithm::Selection, content="Selection")
+  inspect(@types.SortAlgorithm::Quick, content="Quick")
+}
+
+///|
 test "AnimationStep with multiple actions" {
   let actions : Array[@types.AnimationAction] = [
     @types.AnimationAction::Highlight(node_id="n1", color="blue"),
