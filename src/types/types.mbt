@@ -1,17 +1,17 @@
 ///| AST node types produced by the parser.
-pub enum Diagram {
+pub(all) enum Diagram {
   ArrayDiagram(ArrayDef)
   TreeDiagram(TreeDef)
-}
+} derive(Show, Eq)
 
 ///| Array diagram definition.
-pub struct ArrayDef {
+pub(all) struct ArrayDef {
   elements : Array[Int]
   highlights : Array[Highlight]
 } derive(Show, Eq)
 
 ///| Highlight range on an array.
-pub struct Highlight {
+pub(all) struct Highlight {
   start : Int
   end : Int
   color : String
@@ -19,13 +19,13 @@ pub struct Highlight {
 } derive(Show, Eq)
 
 ///| Tree diagram definition.
-pub struct TreeDef {
+pub(all) struct TreeDef {
   kind : TreeKind
   operations : Array[Int]
 } derive(Show, Eq)
 
 ///| Tree variant.
-pub enum TreeKind {
+pub(all) enum TreeKind {
   BST
 } derive(Show, Eq)
 
