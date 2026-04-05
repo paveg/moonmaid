@@ -507,3 +507,18 @@ test "parse tree at 1025 nodes raises error" {
   }
   assert_eq(result, Err(()))
 }
+
+///|
+/// Test: Self-loop edge (A -> A) is parsed correctly.
+test "parse graph self-loop" {
+  let input = "graph directed { A -> A }"
+  match @parser.parse(input) {
+    GraphDiagram(def) => {
+      assert_eq(def.edges.length(), 1)
+      assert_eq(def.edges[0].from, "A")
+      assert_eq(def.edges[0].to, "A")
+      assert_eq(def.nodes.length(), 1)
+    }
+    _ => fail("Expected GraphDiagram")
+  }
+}

@@ -83,6 +83,34 @@ test "sugiyama: undirected raises error" {
 }
 
 ///|
+/// Test: Large graph with 50 nodes lays out without error and all positions are non-negative.
+test "layout large graph 50 nodes" {
+  let nodes : Array[@types.GraphNodeDef] = []
+  let edges : Array[@types.GraphEdgeDef] = []
+  for i = 0; i < 50; i = i + 1 {
+    nodes.push({ id: "n\{i}", label: "N\{i}", shape: Rect })
+    if i > 0 {
+      edges.push({
+        from: "n\{i - 1}",
+        to: "n\{i}",
+        weight: None,
+        style: "solid",
+        label: "",
+      })
+    }
+  }
+  let def : @types.GraphDef = { direction: Directed, nodes, edges }
+  let config = @types.LayoutConfig::default()
+  let graph = layout(def, config)
+  assert_eq(graph.nodes.length(), 50)
+  assert_eq(graph.edges.length(), 49)
+  for i = 0; i < graph.nodes.length(); i = i + 1 {
+    assert_true(graph.nodes[i].x >= 0.0)
+    assert_true(graph.nodes[i].y >= 0.0)
+  }
+}
+
+///|
 /// Test: Node labels are preserved.
 test "sugiyama: node labels preserved" {
   let def : @types.GraphDef = {

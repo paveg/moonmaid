@@ -31,6 +31,17 @@ test "layer_assignment: single node" {
 }
 
 ///|
+/// Test: Disconnected components — disconnected node gets layer 0.
+test "disconnected components get layer 0" {
+  let nodes = ["A", "B", "C"]
+  let edges = [("A", "B")] // C is disconnected
+  let layers = assign_layers(nodes, edges)
+  assert_eq(layers.get("A"), Some(0))
+  assert_eq(layers.get("B"), Some(1))
+  assert_eq(layers.get("C"), Some(0)) // disconnected → source → layer 0
+}
+
+///|
 /// Test: Multiple sources all get layer 0.
 test "layer_assignment: wide graph with multiple sources" {
   let nodes = ["A", "B", "C", "D"]

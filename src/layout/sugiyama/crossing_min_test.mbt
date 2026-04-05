@@ -19,6 +19,16 @@ test "crossing_min: crossing gets reduced" {
 }
 
 ///|
+/// Test: Layers with no edges stay unchanged.
+test "layers with no edges stay unchanged" {
+  let layers : Array[Array[String]] = [["A", "B"], ["C", "D"]]
+  let edges : Array[(String, String)] = []
+  let result = minimize_crossings(layers, edges)
+  assert_eq(result[0].length(), 2)
+  assert_eq(result[1].length(), 2)
+}
+
+///|
 /// Test: Single layer is unchanged.
 test "crossing_min: single layer unchanged" {
   let layers : Array[Array[String]] = [["A", "B", "C"]]

@@ -44,6 +44,37 @@ test "coordinate: wide layer horizontal spacing" {
 }
 
 ///|
+/// Test: Single node gets valid non-negative coordinates.
+test "single node coordinates" {
+  let layers : Array[Array[String]] = [["A"]]
+  let labels : Map[String, String] = Map::new()
+  labels["A"] = "A"
+  let edges : Array[(String, String)] = []
+  let edge_labels : Map[String, String] = Map::new()
+  let config = @types.LayoutConfig::default()
+  let result = assign_coordinates(
+    layers, labels, edges, edge_labels, config, false,
+  )
+  assert_eq(result.nodes.length(), 1)
+  assert_true(result.nodes[0].x >= 0.0)
+  assert_true(result.nodes[0].y >= 0.0)
+}
+
+///|
+/// Test: Empty graph produces no nodes.
+test "empty graph coordinates" {
+  let layers : Array[Array[String]] = []
+  let labels : Map[String, String] = Map::new()
+  let edges : Array[(String, String)] = []
+  let edge_labels : Map[String, String] = Map::new()
+  let config = @types.LayoutConfig::default()
+  let result = assign_coordinates(
+    layers, labels, edges, edge_labels, config, false,
+  )
+  assert_eq(result.nodes.length(), 0)
+}
+
+///|
 /// Test: Bounds enclose all nodes.
 test "coordinate: bounds enclose all nodes" {
   let layers : Array[Array[String]] = [["A", "B"], ["C"]]
