@@ -87,7 +87,6 @@ pub fn generate_bst_animation(
     let node = graph.nodes[i]
     pos[node.id] = (node.x, node.y)
   }
-  let node_width = @types.default_node_width
   let node_height = @types.default_node_height
   let steps : Array[@types.AnimationStep] = []
   let mut root : AnimBSTNode? = None
@@ -96,6 +95,7 @@ pub fn generate_bst_animation(
     let node_id = "node_\{value}"
     match root {
       None => {
+        let node_width = @types.compute_node_width(value.to_string())
         steps.push(
           add_node_step(
             node_id,
@@ -151,6 +151,7 @@ pub fn generate_bst_animation(
                   direction,
                 ),
               )
+              let node_width = @types.compute_node_width(value.to_string())
               steps.push(
                 add_node_step(
                   node_id,

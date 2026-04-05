@@ -1,8 +1,4 @@
 ///|
-/// Node dimensions for tree nodes.
-let node_width : Double = @types.default_node_width
-
-///|
 let node_height : Double = @types.default_node_height
 
 ///|
@@ -166,28 +162,31 @@ fn collect_nodes(
   nodes : Array[@types.PositionedNode],
   edges : Array[@types.PositionedEdge],
 ) -> Unit {
+  let label = node.value.to_string()
+  let nw = @types.compute_node_width(label)
   // Convert relative coordinates to pixel coordinates
-  let px = config.padding +
-    (node.x - min_x) * (node_width + config.node_spacing)
+  let px = config.padding + (node.x - min_x) * (nw + config.node_spacing)
   let py = config.padding + node.y * (node_height + config.level_spacing)
   nodes.push({
     id: "node_\{node.value}",
     x: px,
     y: py,
-    width: node_width,
+    width: nw,
     height: node_height,
-    label: node.value.to_string(),
+    label,
   })
-  let parent_cx = px + node_width / 2.0
+  let parent_cx = px + nw / 2.0
   let parent_bottom = py + node_height
   match node.left {
     Some(left) => {
       collect_nodes(left, config, min_x, nodes, edges)
+      let child_label = left.value.to_string()
+      let child_nw = @types.compute_node_width(child_label)
       let child_px = config.padding +
-        (left.x - min_x) * (node_width + config.node_spacing)
+        (left.x - min_x) * (child_nw + config.node_spacing)
       let child_py = config.padding +
         left.y * (node_height + config.level_spacing)
-      let child_cx = child_px + node_width / 2.0
+      let child_cx = child_px + child_nw / 2.0
       edges.push({
         from_id: "node_\{node.value}",
         to_id: "node_\{left.value}",
@@ -200,11 +199,13 @@ fn collect_nodes(
   match node.right {
     Some(right) => {
       collect_nodes(right, config, min_x, nodes, edges)
+      let child_label = right.value.to_string()
+      let child_nw = @types.compute_node_width(child_label)
       let child_px = config.padding +
-        (right.x - min_x) * (node_width + config.node_spacing)
+        (right.x - min_x) * (child_nw + config.node_spacing)
       let child_py = config.padding +
         right.y * (node_height + config.level_spacing)
-      let child_cx = child_px + node_width / 2.0
+      let child_cx = child_px + child_nw / 2.0
       edges.push({
         from_id: "node_\{node.value}",
         to_id: "node_\{right.value}",

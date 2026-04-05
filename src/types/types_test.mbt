@@ -66,6 +66,37 @@ test "AnimationStep with multiple actions" {
 }
 
 ///|
+test "estimate_text_width ASCII" {
+  let w = @types.estimate_text_width("Hello", 16.0)
+  assert_true(w > 30.0) // 5 chars * ~8.5px
+  assert_true(w < 60.0)
+}
+
+///|
+test "estimate_text_width Japanese" {
+  let w = @types.estimate_text_width("処理", 16.0)
+  assert_true(w > 25.0) // 2 CJK chars * ~16px
+}
+
+///|
+test "compute_node_width short label" {
+  let w = @types.compute_node_width("A")
+  assert_eq(w, @types.default_node_width) // min width
+}
+
+///|
+test "compute_node_width long label" {
+  let w = @types.compute_node_width("This is a long label")
+  assert_true(w > @types.default_node_width)
+}
+
+///|
+test "compute_node_width Japanese label" {
+  let w = @types.compute_node_width("データ処理を実行")
+  assert_true(w > 100.0)
+}
+
+///|
 test "GraphDef with Directed direction" {
   let def : @types.GraphDef = {
     direction: @types.GraphDirection::Directed,

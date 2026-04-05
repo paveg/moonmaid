@@ -10,22 +10,39 @@ pub fn assign_coordinates(
   config : @types.LayoutConfig,
   transpose : Bool,
 ) -> @types.PositionedGraph {
-  let nw = @types.default_node_width
   let nh = @types.default_node_height
   let padding = config.padding
   let node_spacing = config.node_spacing
   let level_spacing = config.level_spacing
-  // Find max layer width for centering
-  let mut max_width = 0
+  // Precompute widths for all nodes
+  let node_widths : Map[String, Double] = Map::new()
   for i = 0; i < layers.length(); i = i + 1 {
-    if layers[i].length() > max_width {
-      max_width = layers[i].length()
+    let layer = layers[i]
+    for j = 0; j < layer.length(); j = j + 1 {
+      let node_id = layer[j]
+      let label = node_labels.get(node_id).unwrap_or(node_id)
+      node_widths[node_id] = @types.compute_node_width(label)
     }
   }
-  let total_span = if max_width > 0 {
-    max_width.to_double() * nw + (max_width - 1).to_double() * node_spacing
-  } else {
-    0.0
+  // Compute layer spans (sum of node widths + spacing between nodes)
+  let layer_spans : Array[Double] = []
+  for i = 0; i < layers.length(); i = i + 1 {
+    let layer = layers[i]
+    let mut span = 0.0
+    for j = 0; j < layer.length(); j = j + 1 {
+      span = span + node_widths.get(layer[j]).unwrap_or(56.0)
+      if j < layer.length() - 1 {
+        span = span + node_spacing
+      }
+    }
+    layer_spans.push(span)
+  }
+  // Find max layer span for centering
+  let mut max_span = 0.0
+  for i = 0; i < layer_spans.length(); i = i + 1 {
+    if layer_spans[i] > max_span {
+      max_span = layer_spans[i]
+    }
   }
   // Position nodes
   let positioned_nodes : Array[@types.PositionedNode] = []
@@ -33,13 +50,15 @@ pub fn assign_coordinates(
   for li = 0; li < layers.length(); li = li + 1 {
     let layer = layers[li]
     let layer_count = layer.length()
-    let layer_span = layer_count.to_double() * nw +
-      (layer_count - 1).to_double() * node_spacing
-    let offset = (total_span - layer_span) / 2.0
+    let layer_span = layer_spans[li]
+    let offset = (max_span - layer_span) / 2.0
+    let mut accumulated_x = offset
     for pi = 0; pi < layer_count; pi = pi + 1 {
       let node_id = layer[pi]
       let label = node_labels.get(node_id).unwrap_or(node_id)
-      let pos_in_layer = offset + pi.to_double() * (nw + node_spacing)
+      let nw = node_widths.get(node_id).unwrap_or(56.0)
+      let pos_in_layer = accumulated_x
+      accumulated_x = accumulated_x + nw + node_spacing
       let layer_coord = li.to_double() * (nh + level_spacing)
       let (x, y) = if transpose {
         (padding + layer_coord, padding + pos_in_layer)
@@ -57,13 +76,13 @@ pub fn assign_coordinates(
     let edge_key = from + "->" + to
     let label = edge_labels.get(edge_key).unwrap_or("")
     match (node_pos.get(from), node_pos.get(to)) {
-      (Some((fx, fy, fw, fh)), Some((tx, ty, _tw, _th))) => {
+      (Some((fx, fy, fw, fh)), Some((tx, ty, tw, _th))) => {
         let points : Array[(Double, Double)] = if transpose {
           // LR: right-center of source to left-center of target
           [(fx + fw, fy + fh / 2.0), (tx, ty + fh / 2.0)]
         } else {
           // TD: bottom-center of source to top-center of target
-          [(fx + fw / 2.0, fy + fh), (tx + fw / 2.0, ty)]
+          [(fx + fw / 2.0, fy + fh), (tx + tw / 2.0, ty)]
         }
         positioned_edges.push({ from_id: from, to_id: to, points, label })
       }

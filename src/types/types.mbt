@@ -85,7 +85,7 @@ pub(all) struct LayoutConfig {
 ///|
 /// Default layout configuration.
 pub fn LayoutConfig::default() -> LayoutConfig {
-  { node_spacing: 20.0, level_spacing: 60.0, padding: 20.0 }
+  { node_spacing: 20.0, level_spacing: 40.0, padding: 20.0 }
 }
 
 ///|
@@ -107,6 +107,39 @@ pub let default_node_width : Double = 56.0
 
 ///|
 pub let default_node_height : Double = 40.0
+
+///|
+/// Estimate the pixel width of a text string for SVG layout.
+/// Uses heuristics: ASCII chars ~8.5px each, CJK/wide chars ~16px each at font-size 16.
+pub fn estimate_text_width(text : String, font_size : Double) -> Double {
+  let scale = font_size / 16.0
+  let mut width = 0.0
+  for i = 0; i < text.length(); i = i + 1 {
+    let code = text[i].to_int()
+    if code > 0x2E80 {
+      // CJK Unified Ideographs, Hiragana, Katakana, etc.
+      width = width + 16.0
+    } else {
+      // ASCII and basic Latin
+      width = width + 8.5
+    }
+  }
+  width * scale
+}
+
+///|
+/// Compute node width based on label text, with minimum and padding.
+pub fn compute_node_width(label : String) -> Double {
+  let text_width = estimate_text_width(label, 16.0)
+  let padding = 24.0 // 12px padding on each side
+  let min_width = default_node_width // 56.0
+  let result = text_width + padding
+  if result > min_width {
+    result
+  } else {
+    min_width
+  }
+}
 
 ///|
 /// Parse/render error.

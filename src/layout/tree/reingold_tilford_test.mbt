@@ -8,7 +8,7 @@ test "single node produces one node and zero edges" {
   assert_eq(graph.edges.length(), 0)
   assert_eq(graph.nodes[0].id, "node_5")
   assert_eq(graph.nodes[0].label, "5")
-  assert_eq(graph.nodes[0].width, 56.0)
+  assert_eq(graph.nodes[0].width, @types.compute_node_width("5"))
   assert_eq(graph.nodes[0].height, 40.0)
 }
 
