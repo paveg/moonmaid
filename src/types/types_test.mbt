@@ -64,3 +64,46 @@ test "AnimationStep with multiple actions" {
   )
   assert_eq(step.actions[2], @types.AnimationAction::Unhighlight(node_id="n1"))
 }
+
+///|
+test "GraphDef with Directed direction" {
+  let def : @types.GraphDef = {
+    direction: @types.GraphDirection::Directed,
+    nodes: [
+      { id: "A", label: "A", shape: @types.NodeShape::Rect },
+      { id: "B", label: "B", shape: @types.NodeShape::Rect },
+    ],
+    edges: [{ from: "A", to: "B", weight: None, style: "solid", label: "" }],
+  }
+  assert_eq(def.direction, @types.GraphDirection::Directed)
+  assert_eq(def.nodes.length(), 2)
+  assert_eq(def.edges.length(), 1)
+}
+
+///|
+test "GraphNodeDef with Diamond shape" {
+  let node : @types.GraphNodeDef = {
+    id: "D1",
+    label: "Decision?",
+    shape: @types.NodeShape::Diamond,
+  }
+  assert_eq(node.id, "D1")
+  assert_eq(node.label, "Decision?")
+  assert_eq(node.shape, @types.NodeShape::Diamond)
+}
+
+///|
+test "GraphEdgeDef with weight and label" {
+  let edge : @types.GraphEdgeDef = {
+    from: "A",
+    to: "B",
+    weight: Some(5),
+    style: "dashed",
+    label: "Yes",
+  }
+  assert_eq(edge.from, "A")
+  assert_eq(edge.to, "B")
+  assert_eq(edge.weight, Some(5))
+  assert_eq(edge.style, "dashed")
+  assert_eq(edge.label, "Yes")
+}

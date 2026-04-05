@@ -5,6 +5,7 @@ pub(all) enum Diagram {
   TreeDiagram(TreeDef)
   AnimatedTreeDiagram(TreeDef)
   AnimatedArrayDiagram(ArrayAnimDef)
+  GraphDiagram(GraphDef)
 } derive(Show, Eq)
 
 ///|
@@ -92,12 +93,13 @@ pub fn LayoutConfig::default() -> LayoutConfig {
 pub struct Limits {
   max_nodes : Int
   max_array_size : Int
+  max_edges : Int
 } derive(Show, Eq)
 
 ///|
 /// Default limits.
 pub fn Limits::default() -> Limits {
-  { max_nodes: 1024, max_array_size: 256 }
+  { max_nodes: 1024, max_array_size: 256, max_edges: 4096 }
 }
 
 ///|
@@ -205,4 +207,47 @@ pub(all) enum SortAlgorithm {
 pub(all) struct ArrayAnimDef {
   elements : Array[Int]
   algorithm : SortAlgorithm
+} derive(Show, Eq)
+
+///|
+/// Direction of a graph or flowchart.
+pub(all) enum GraphDirection {
+  Directed
+  Undirected
+  FlowTD
+  FlowLR
+} derive(Show, Eq)
+
+///|
+/// Shape of a node in a flowchart.
+pub(all) enum NodeShape {
+  Rect
+  Diamond
+  Rounded
+} derive(Show, Eq)
+
+///|
+/// A node in a graph or flowchart.
+pub(all) struct GraphNodeDef {
+  id : String
+  label : String
+  shape : NodeShape
+} derive(Show, Eq)
+
+///|
+/// An edge in a graph or flowchart.
+pub(all) struct GraphEdgeDef {
+  from : String
+  to : String
+  weight : Int?
+  style : String
+  label : String
+} derive(Show, Eq)
+
+///|
+/// A graph or flowchart definition.
+pub(all) struct GraphDef {
+  direction : GraphDirection
+  nodes : Array[GraphNodeDef]
+  edges : Array[GraphEdgeDef]
 } derive(Show, Eq)
