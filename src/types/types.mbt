@@ -109,3 +109,41 @@ pub suberror MoonmaidError {
 pub fn MoonmaidError::of(msg : String) -> MoonmaidError {
   MoonmaidError(msg)
 }
+
+///|
+/// Compute a bounding box that encloses all positioned nodes, padded on all sides.
+pub fn compute_bounds(
+  nodes : Array[PositionedNode],
+  padding : Double,
+) -> BoundingBox {
+  if nodes.length() == 0 {
+    return { x: 0.0, y: 0.0, width: 0.0, height: 0.0 }
+  }
+  let mut min_x = nodes[0].x
+  let mut min_y = nodes[0].y
+  let mut max_x = nodes[0].x + nodes[0].width
+  let mut max_y = nodes[0].y + nodes[0].height
+  for i = 1; i < nodes.length(); i = i + 1 {
+    let node = nodes[i]
+    if node.x < min_x {
+      min_x = node.x
+    }
+    if node.y < min_y {
+      min_y = node.y
+    }
+    let right = node.x + node.width
+    if right > max_x {
+      max_x = right
+    }
+    let bottom = node.y + node.height
+    if bottom > max_y {
+      max_y = bottom
+    }
+  }
+  {
+    x: min_x - padding,
+    y: min_y - padding,
+    width: max_x - min_x + padding * 2.0,
+    height: max_y - min_y + padding * 2.0,
+  }
+}

@@ -95,47 +95,30 @@ fn keyword_token(s : String) -> Token? {
 
 ///|
 fn Lexer::lex_string(self : Lexer) -> String raise @types.MoonmaidError {
-  // consume opening quote
-  self.advance()
+  self.advance() // consume opening quote
   let buf = StringBuilder::new()
-  let mut done = false
-  while not(done) {
+  while true {
     match self.current_char() {
       None => raise @types.MoonmaidError::of("unterminated string literal")
       Some('"') => {
         self.advance()
-        done = true
+        break
       }
       Some('\\') => {
         self.advance()
         match self.current_char() {
           None => raise @types.MoonmaidError::of("unterminated escape sequence")
-          Some('n') => {
-            buf.write_char('\n')
-            self.advance()
-          }
-          Some('t') => {
-            buf.write_char('\t')
-            self.advance()
-          }
-          Some('r') => {
-            buf.write_char('\r')
-            self.advance()
-          }
-          Some('\\') => {
-            buf.write_char('\\')
-            self.advance()
-          }
-          Some('"') => {
-            buf.write_char('"')
-            self.advance()
-          }
+          Some('n') => buf.write_char('\n')
+          Some('t') => buf.write_char('\t')
+          Some('r') => buf.write_char('\r')
+          Some('\\') => buf.write_char('\\')
+          Some('"') => buf.write_char('"')
           Some(c) => {
             buf.write_char('\\')
             buf.write_char(c)
-            self.advance()
           }
         }
+        self.advance()
       }
       Some(c) => {
         buf.write_char(c)

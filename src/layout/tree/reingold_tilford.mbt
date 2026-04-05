@@ -41,162 +41,98 @@ fn insert(root : BSTNode?, value : Int) -> BSTNode {
 }
 
 ///|
-/// Contour: tracks leftmost/rightmost x at each depth.
-priv struct Contour {
-  values : Array[Double]
-}
-
-///|
-fn Contour::new() -> Contour {
-  { values: [] }
-}
-
-///|
-fn Contour::push(self : Contour, v : Double) -> Unit {
-  self.values.push(v)
-}
-
-///|
-fn Contour::length(self : Contour) -> Int {
-  self.values.length()
-}
-
-///|
-fn Contour::get(self : Contour, i : Int) -> Double {
-  self.values[i]
+/// Prepend a value to the front of a contour (Array[Double]),
+/// then append all elements from the source contour.
+fn prepend_contour(head : Double, tail : Array[Double]) -> Array[Double] {
+  let result : Array[Double] = [head]
+  for i = 0; i < tail.length(); i = i + 1 {
+    result.push(tail[i])
+  }
+  result
 }
 
 ///|
 /// First pass: assign relative x-coordinates bottom-up.
-/// Returns the left and right contours of the subtree.
-fn first_pass(node : BSTNode, depth : Int) -> (Contour, Contour) {
+/// Returns the left and right contours of the subtree as Array[Double].
+fn first_pass(node : BSTNode, depth : Int) -> (Array[Double], Array[Double]) {
   node.y = depth.to_double()
   match (node.left, node.right) {
     (None, None) => {
-      // Leaf
       node.x = 0.0
-      let lc = Contour::new()
-      lc.push(0.0)
-      let rc = Contour::new()
-      rc.push(0.0)
-      (lc, rc)
+      ([0.0], [0.0])
     }
     (Some(left), None) => {
-      // Only left child
       let (ll, lr) = first_pass(left, depth + 1)
       node.x = left.x + 1.0
-
-      let lc = Contour::new()
-      lc.push(node.x)
-      for i = 0; i < ll.length(); i = i + 1 {
-        lc.push(ll.get(i))
-      }
-      let rc = Contour::new()
-      rc.push(node.x)
-      for i = 0; i < lr.length(); i = i + 1 {
-        rc.push(lr.get(i))
-      }
-      (lc, rc)
+      (prepend_contour(node.x, ll), prepend_contour(node.x, lr))
     }
     (None, Some(right)) => {
-      // Only right child
       let (rl, rr) = first_pass(right, depth + 1)
       node.x = right.x - 1.0
-
-      let lc = Contour::new()
-      lc.push(node.x)
-      for i = 0; i < rl.length(); i = i + 1 {
-        lc.push(rl.get(i))
-      }
-      let rc = Contour::new()
-      rc.push(node.x)
-      for i = 0; i < rr.length(); i = i + 1 {
-        rc.push(rr.get(i))
-      }
-      (lc, rc)
+      (prepend_contour(node.x, rl), prepend_contour(node.x, rr))
     }
     (Some(left), Some(right)) => {
-      // Both children
       let (ll, lr) = first_pass(left, depth + 1)
       let (rl, rr) = first_pass(right, depth + 1)
       // Find minimum separation so no two nodes at the same depth overlap.
-      // Compare right contour of left subtree with left contour of right subtree.
       let min_len = if lr.length() < rl.length() {
         lr.length()
       } else {
         rl.length()
       }
-      let mut needed_sep = 2.0 // minimum 2 units apart (children 1 unit each side)
+      let mut needed_sep = 2.0 // minimum 2 units apart
       for i = 0; i < min_len; i = i + 1 {
-        let gap = lr.get(i) - rl.get(i)
-        // Need at least 1 unit between contours at each depth
-        let sep = gap + 1.0
+        let sep = lr[i] - rl[i] + 1.0
         if sep > needed_sep {
           needed_sep = sep
         }
       }
-      // Also ensure left subtree's rightmost nodes don't reach the root position
-      // and right subtree's leftmost nodes don't reach root position.
-      // After shifting by half each way, root = 0. So we need all lr < 0 and all rl > 0.
-      // lr[i] - half < 0 → half > lr[i] for all i
-      // rl[i] + half > 0 → half > -rl[i] for all i
+      // Ensure subtree contours don't cross the root position
       for i = 0; i < lr.length(); i = i + 1 {
-        let req = lr.get(i) + 0.5 // need lr - half < -0.5 → half > lr + 0.5
+        let req = lr[i] + 0.5
         if req > needed_sep / 2.0 {
           needed_sep = req * 2.0
         }
       }
       for i = 0; i < rl.length(); i = i + 1 {
-        let req = -rl.get(i) + 0.5 // need rl + half > 0.5 → half > -rl + 0.5
+        let req = -rl[i] + 0.5
         if req > needed_sep / 2.0 {
           needed_sep = req * 2.0
         }
       }
-      // Total separation: left subtree shifts left, right shifts right
       let half = needed_sep / 2.0
       shift_subtree(left, -half)
       shift_subtree(right, half)
       // Update contours with shifts applied
       for i = 0; i < lr.length(); i = i + 1 {
-        lr.values[i] = lr.get(i) - half
+        lr[i] = lr[i] - half
       }
       for i = 0; i < ll.length(); i = i + 1 {
-        ll.values[i] = ll.get(i) - half
+        ll[i] = ll[i] - half
       }
       for i = 0; i < rl.length(); i = i + 1 {
-        rl.values[i] = rl.get(i) + half
+        rl[i] = rl[i] + half
       }
       for i = 0; i < rr.length(); i = i + 1 {
-        rr.values[i] = rr.get(i) + half
+        rr[i] = rr[i] + half
       }
       node.x = (left.x + right.x) / 2.0
 
-      // Merge contours
-      let result_left = Contour::new()
-      result_left.push(node.x)
-      let result_right = Contour::new()
-      result_right.push(node.x)
-      // Left contour: take left of left subtree, extended by left of right if deeper
+      // Merge contours: left from left subtree, right from right subtree,
+      // extending with the other if one is deeper
       let ll_len = ll.length()
       let rl_len = rl.length()
       let max_depth = if ll_len > rl_len { ll_len } else { rl_len }
+      let result_left : Array[Double] = [node.x]
       for i = 0; i < max_depth; i = i + 1 {
-        if i < ll_len {
-          result_left.push(ll.get(i))
-        } else {
-          result_left.push(rl.get(i))
-        }
+        result_left.push(if i < ll_len { ll[i] } else { rl[i] })
       }
-      // Right contour: take right of right subtree, extended by right of left if deeper
       let lr_len = lr.length()
       let rr_len = rr.length()
       let max_depth2 = if lr_len > rr_len { lr_len } else { rr_len }
+      let result_right : Array[Double] = [node.x]
       for i = 0; i < max_depth2; i = i + 1 {
-        if i < rr_len {
-          result_right.push(rr.get(i))
-        } else {
-          result_right.push(lr.get(i))
-        }
+        result_right.push(if i < rr_len { rr[i] } else { lr[i] })
       }
       (result_left, result_right)
     }
@@ -302,44 +238,6 @@ fn find_min_x(node : BSTNode) -> Double {
 }
 
 ///|
-/// Compute bounding box for positioned nodes.
-fn compute_bounds(
-  nodes : Array[@types.PositionedNode],
-  padding : Double,
-) -> @types.BoundingBox {
-  if nodes.length() == 0 {
-    return { x: 0.0, y: 0.0, width: 0.0, height: 0.0 }
-  }
-  let mut min_x = nodes[0].x
-  let mut min_y = nodes[0].y
-  let mut max_x = nodes[0].x + nodes[0].width
-  let mut max_y = nodes[0].y + nodes[0].height
-  for i = 1; i < nodes.length(); i = i + 1 {
-    let node = nodes[i]
-    if node.x < min_x {
-      min_x = node.x
-    }
-    if node.y < min_y {
-      min_y = node.y
-    }
-    let right = node.x + node.width
-    if right > max_x {
-      max_x = right
-    }
-    let bottom = node.y + node.height
-    if bottom > max_y {
-      max_y = bottom
-    }
-  }
-  {
-    x: min_x - padding,
-    y: min_y - padding,
-    width: max_x - min_x + padding * 2.0,
-    height: max_y - min_y + padding * 2.0,
-  }
-}
-
-///|
 /// Layout a tree definition using the Reingold-Tilford algorithm.
 pub fn layout(
   def : @types.TreeDef,
@@ -374,7 +272,7 @@ pub fn layout(
       let nodes : Array[@types.PositionedNode] = []
       let edges : Array[@types.PositionedEdge] = []
       collect_nodes(r, config, min_x, nodes, edges)
-      let bounds = compute_bounds(nodes, config.padding)
+      let bounds = @types.compute_bounds(nodes, config.padding)
       { nodes, edges, bounds }
     }
   }

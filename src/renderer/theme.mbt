@@ -42,20 +42,12 @@ let font_mono : String = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consol
 /// Resolve a highlight color name to the GFM palette value.
 /// Returns the edge_color as default for unknown names.
 pub fn resolve_highlight_color(color : String) -> String {
-  if color == "blue" {
-    highlight_blue
-  } else if color == "purple" {
-    highlight_purple
-  } else if color == "yellow" {
-    highlight_yellow
-  } else if color == "red" {
-    highlight_red
-  } else if color == "green" {
-    highlight_green
-  } else if color.length() > 0 && color[0] == '#' {
-    // Pass through hex colors directly
-    color
-  } else {
-    edge_color
+  match color {
+    "blue" => highlight_blue
+    "purple" => highlight_purple
+    "yellow" => highlight_yellow
+    "red" => highlight_red
+    "green" => highlight_green
+    _ => if color.length() > 0 && color[0] == '#' { color } else { edge_color }
   }
 }
