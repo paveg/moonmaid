@@ -41,14 +41,18 @@ fn insert(root : BSTNode?, value : Int) -> BSTNode {
 }
 
 ///|
-/// Prepend a value to the front of a contour (Array[Double]),
-/// then append all elements from the source contour.
+/// Prepend a value to the front of a contour array in place.
+/// Shifts existing elements right by one position, then sets index 0.
 fn prepend_contour(head : Double, tail : Array[Double]) -> Array[Double] {
-  let result : Array[Double] = [head]
-  for i = 0; i < tail.length(); i = i + 1 {
-    result.push(tail[i])
+  // Grow the array by one element at the end
+  tail.push(0.0)
+  // Shift all elements one position to the right
+  let len = tail.length()
+  for i = len - 1; i > 0; i = i - 1 {
+    tail[i] = tail[i - 1]
   }
-  result
+  tail[0] = head
+  tail
 }
 
 ///|

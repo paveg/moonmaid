@@ -184,3 +184,27 @@ test "animated empty tree handles gracefully" {
   assert_true(html.contains("moonmaid-animated"))
   assert_true(html.contains("<svg"))
 }
+
+///|
+/// Test 17: Input exceeding 64 KiB returns an error SVG.
+test "render input too large returns error svg" {
+  let buf = StringBuilder::new()
+  // Build a string > 65536 characters
+  for i = 0; i < 100000; i = i + 1 {
+    buf.write_char('x')
+  }
+  let svg = @lib.render(buf.to_string())
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains("#cf222e"))
+  assert_true(svg.contains("Input too large"))
+}
+
+///|
+/// Test 18: Invalid input returns SVG with a useful error message.
+test "render invalid input returns useful error message" {
+  let svg = @lib.render("invalid { }")
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains("#cf222e"))
+  // Should contain a meaningful message, not just "Parse or render error"
+  assert_false(svg.contains("Parse or render error"))
+}

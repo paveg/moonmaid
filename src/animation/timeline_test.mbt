@@ -99,3 +99,22 @@ test "special characters are json escaped" {
   assert_true(json.contains("\\\"hello\\\""))
   assert_true(json.contains("\\\\backslash"))
 }
+
+///|
+/// Test 6: json_escape prevents script injection in inline script tags.
+test "json escape prevents script injection" {
+  let timeline : @types.AnimationTimeline = {
+    steps: [
+      {
+        actions: [],
+        description: "</script><script>alert(1)",
+        duration_ms: 100,
+      },
+    ],
+  }
+  let json = @animation.timeline_to_json(timeline)
+  // Must NOT contain literal </script> which would break out of a script tag
+  assert_false(json.contains("</script>"))
+  // Should contain escaped angle brackets instead
+  assert_true(json.contains("\\u003c/script\\u003e"))
+}

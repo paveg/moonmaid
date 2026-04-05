@@ -1,18 +1,30 @@
 ///|
 /// Escape special characters for JSON string values.
-/// Escapes: " \ \n \r \t
+/// Escapes: " \ \n \r \t < > U+2028 U+2029
+/// The < and > escapes prevent script injection when JSON is embedded in HTML
+/// script tags. U+2028/U+2029 are JS line terminators that break string literals.
 fn json_escape(input : String) -> String {
   let buf = StringBuilder::new()
   let len = input.length()
   for i = 0; i < len; i = i + 1 {
-    let c = Int::unsafe_to_char(input[i].to_int())
+    let code = input[i].to_int()
+    let c = Int::unsafe_to_char(code)
     match c {
       '"' => buf.write_string("\\\"")
       '\\' => buf.write_string("\\\\")
       '\n' => buf.write_string("\\n")
       '\r' => buf.write_string("\\r")
       '\t' => buf.write_string("\\t")
-      _ => buf.write_char(c)
+      '<' => buf.write_string("\\u003c")
+      '>' => buf.write_string("\\u003e")
+      _ =>
+        if code == 0x2028 {
+          buf.write_string("\\u2028")
+        } else if code == 0x2029 {
+          buf.write_string("\\u2029")
+        } else {
+          buf.write_char(c)
+        }
     }
   }
   buf.to_string()

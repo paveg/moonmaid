@@ -47,7 +47,10 @@ fn add_node_step(
   node_height : Double,
   description : String,
 ) -> @types.AnimationStep {
-  let (x, y) = pos[node_id]
+  let (x, y) = match pos.get(node_id) {
+    Some(p) => p
+    None => (0.0, 0.0)
+  }
   {
     actions: [
       AddNode(

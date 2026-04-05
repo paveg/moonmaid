@@ -86,3 +86,27 @@ test "single tree node renders without edges" {
   assert_true(svg.contains(">42<"))
   assert_false(svg.contains("<polyline"))
 }
+
+///|
+/// Test 6: Valid hex colors are accepted by resolve_highlight_color.
+test "valid hex colors accepted" {
+  assert_eq(resolve_highlight_color("#fff"), "#fff")
+  assert_eq(resolve_highlight_color("#aabbcc"), "#aabbcc")
+  assert_eq(resolve_highlight_color("#AABBCC"), "#AABBCC")
+  assert_eq(resolve_highlight_color("#abcd"), "#abcd")
+  assert_eq(resolve_highlight_color("#aabbccdd"), "#aabbccdd")
+}
+
+///|
+/// Test 7: Invalid hex colors fall back to the default fill (#f6f8fa).
+test "invalid hex colors rejected" {
+  let fallback = "#f6f8fa"
+  // #xyz is not valid hex
+  assert_eq(resolve_highlight_color("#xyz"), fallback)
+  // XSS injection attempt
+  assert_eq(resolve_highlight_color("#fff\" onclick=alert(1)"), fallback)
+  // Too short
+  assert_eq(resolve_highlight_color("#ff"), fallback)
+  // Too long
+  assert_eq(resolve_highlight_color("#aabbccdde"), fallback)
+}
