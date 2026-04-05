@@ -87,3 +87,8 @@ pub fn Limits::default() -> Limits {
 
 ///| Parse/render error.
 pub suberror MoonmaidError { MoonmaidError(String) }
+
+///| Construct a MoonmaidError with the given message.
+pub fn MoonmaidError::of(msg : String) -> MoonmaidError {
+  MoonmaidError(msg)
+}
