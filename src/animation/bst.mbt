@@ -13,6 +13,58 @@ fn AnimBSTNode::new(value : Int) -> AnimBSTNode {
 }
 
 ///|
+/// Create a traversal step: edge animation, annotation, and unhighlight.
+fn traverse_step(
+  value : Int,
+  current_value : Int,
+  current_id : String,
+  target_id : String,
+  direction : String,
+) -> @types.AnimationStep {
+  let cmp = if direction == "left" { "<" } else { ">" }
+  {
+    actions: [
+      TraverseEdge(from=current_id, to=target_id, color="#2196f3"),
+      Annotate(
+        text="\{value} \{cmp} \{current_value}, go \{direction}",
+        x=0.0,
+        y=0.0,
+      ),
+      Unhighlight(node_id=current_id),
+    ],
+    description: "\{value} \{cmp} \{current_value}, traverse \{direction}",
+    duration_ms: 400,
+  }
+}
+
+///|
+/// Create an AddNode step at a precomputed position.
+fn add_node_step(
+  node_id : String,
+  pos : Map[String, (Double, Double)],
+  value : Int,
+  node_width : Double,
+  node_height : Double,
+  description : String,
+) -> @types.AnimationStep {
+  let (x, y) = pos[node_id]
+  {
+    actions: [
+      AddNode(
+        node_id~,
+        x~,
+        y~,
+        width=node_width,
+        height=node_height,
+        label=value.to_string(),
+      ),
+    ],
+    description,
+    duration_ms: 500,
+  }
+}
+
+///|
 /// Generate a step-by-step BST insertion animation timeline.
 ///
 /// Uses precomputed layout positions so each AddNode action places
@@ -41,35 +93,26 @@ pub fn generate_bst_animation(
     let node_id = "node_\{value}"
     match root {
       None => {
-        // Root insert: single AddNode step
-        let (x, y) = pos[node_id]
-        steps.push({
-          actions: [
-            AddNode(
-              node_id~,
-              x~,
-              y~,
-              width=node_width,
-              height=node_height,
-              label=value.to_string(),
-            ),
-          ],
-          description: "Insert \{value} as root",
-          duration_ms: 500,
-        })
+        steps.push(
+          add_node_step(
+            node_id,
+            pos,
+            value,
+            node_width,
+            node_height,
+            "Insert \{value} as root",
+          ),
+        )
         root = Some(AnimBSTNode::new(value))
       }
       Some(r) => {
-        // Check for duplicate before generating steps
         if contains(r, value) {
           continue i + 1
         }
-        // Walk the search path, generating steps for each comparison
         let mut current = r
         let mut done = false
         while not(done) {
           let current_id = "node_\{current.value}"
-          // Step: Highlight + CompareNodes
           steps.push({
             actions: [
               Highlight(node_id=current_id, color="#ff9800"),
@@ -78,115 +121,47 @@ pub fn generate_bst_animation(
             description: "Compare \{value} with \{current.value}",
             duration_ms: 400,
           })
-          if value < current.value {
-            // Go left
-            match current.left {
-              Some(left) => {
-                let left_id = "node_\{left.value}"
-                steps.push({
-                  actions: [
-                    TraverseEdge(from=current_id, to=left_id, color="#2196f3"),
-                    Annotate(
-                      text="\{value} < \{current.value}, go left",
-                      x=0.0,
-                      y=0.0,
-                    ),
-                    Unhighlight(node_id=current_id),
-                  ],
-                  description: "\{value} < \{current.value}, traverse left",
-                  duration_ms: 400,
-                })
-                current = left
-              }
-              None => {
-                // Insert here
-                steps.push({
-                  actions: [
-                    TraverseEdge(from=current_id, to=node_id, color="#2196f3"),
-                    Annotate(
-                      text="\{value} < \{current.value}, go left",
-                      x=0.0,
-                      y=0.0,
-                    ),
-                    Unhighlight(node_id=current_id),
-                  ],
-                  description: "\{value} < \{current.value}, traverse left",
-                  duration_ms: 400,
-                })
-                let (x, y) = pos[node_id]
-                steps.push({
-                  actions: [
-                    AddNode(
-                      node_id~,
-                      x~,
-                      y~,
-                      width=node_width,
-                      height=node_height,
-                      label=value.to_string(),
-                    ),
-                  ],
-                  description: "Insert \{value}",
-                  duration_ms: 500,
-                })
-                done = true
-              }
+          let go_left = value < current.value
+          let direction = if go_left { "left" } else { "right" }
+          let child = if go_left { current.left } else { current.right }
+          match child {
+            Some(next) => {
+              let next_id = "node_\{next.value}"
+              steps.push(
+                traverse_step(
+                  value,
+                  current.value,
+                  current_id,
+                  next_id,
+                  direction,
+                ),
+              )
+              current = next
             }
-          } else {
-            // Go right (value > current.value; duplicates already filtered)
-            match current.right {
-              Some(right) => {
-                let right_id = "node_\{right.value}"
-                steps.push({
-                  actions: [
-                    TraverseEdge(from=current_id, to=right_id, color="#2196f3"),
-                    Annotate(
-                      text="\{value} > \{current.value}, go right",
-                      x=0.0,
-                      y=0.0,
-                    ),
-                    Unhighlight(node_id=current_id),
-                  ],
-                  description: "\{value} > \{current.value}, traverse right",
-                  duration_ms: 400,
-                })
-                current = right
-              }
-              None => {
-                // Insert here
-                steps.push({
-                  actions: [
-                    TraverseEdge(from=current_id, to=node_id, color="#2196f3"),
-                    Annotate(
-                      text="\{value} > \{current.value}, go right",
-                      x=0.0,
-                      y=0.0,
-                    ),
-                    Unhighlight(node_id=current_id),
-                  ],
-                  description: "\{value} > \{current.value}, traverse right",
-                  duration_ms: 400,
-                })
-                let (x, y) = pos[node_id]
-                steps.push({
-                  actions: [
-                    AddNode(
-                      node_id~,
-                      x~,
-                      y~,
-                      width=node_width,
-                      height=node_height,
-                      label=value.to_string(),
-                    ),
-                  ],
-                  description: "Insert \{value}",
-                  duration_ms: 500,
-                })
-                done = true
-              }
+            None => {
+              steps.push(
+                traverse_step(
+                  value,
+                  current.value,
+                  current_id,
+                  node_id,
+                  direction,
+                ),
+              )
+              steps.push(
+                add_node_step(
+                  node_id,
+                  pos,
+                  value,
+                  node_width,
+                  node_height,
+                  "Insert \{value}",
+                ),
+              )
+              done = true
             }
           }
         }
-        // Actually insert into our internal tree
         insert_node(r, value)
       }
     }

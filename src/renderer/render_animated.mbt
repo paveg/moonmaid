@@ -22,33 +22,9 @@ pub fn render_animated(
   buf.write_string("<div class=\"moonmaid-animated\">")
 
   // Style block
-  buf.write_string("<style>")
   buf.write_string(
-    (
-      #| .moonmaid-animated { border: 1px solid #d1d9e0; border-radius: 8px; overflow: hidden }
-    ),
+    "<style>.moonmaid-animated{border:1px solid #d1d9e0;border-radius:8px;overflow:hidden}.mm-btn{background:none;border:1px solid #d1d9e0;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px;color:#656d76}.mm-btn:hover{background:#f6f8fa;color:#1f2328}.moonmaid-controls{display:flex;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid #d1d9e0;background:#f6f8fa}.moonmaid-description{padding:8px 12px;font-size:13px;color:#1f2328;min-height:24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif}</style>",
   )
-  buf.write_string(
-    (
-      #| .mm-btn { background: none; border: 1px solid #d1d9e0; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 14px; color: #656d76 }
-    ),
-  )
-  buf.write_string(
-    (
-      #| .mm-btn:hover { background: #f6f8fa; color: #1f2328 }
-    ),
-  )
-  buf.write_string(
-    (
-      #| .moonmaid-controls { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-top: 1px solid #d1d9e0; background: #f6f8fa }
-    ),
-  )
-  buf.write_string(
-    (
-      #| .moonmaid-description { padding: 8px 12px; font-size: 13px; color: #1f2328; min-height: 24px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif }
-    ),
-  )
-  buf.write_string("</style>")
 
   // SVG with data-node-id and data-edge-id attributes
   buf.write_string("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"")
@@ -158,76 +134,11 @@ pub fn render_animated(
   buf.write_string("<div class=\"moonmaid-description\"></div>")
 
   // Inline playback JS (uses textContent for XSS safety)
-  buf.write_string("<script>(function(){")
-  buf.write_string("var timeline=")
+  buf.write_string("<script>(function(){var timeline=")
   buf.write_string(timeline_json)
-  buf.write_string(";")
   buf.write_string(
-    (
-      #| var root=document.currentScript.parentElement;
-    ),
+    ";var root=document.currentScript.parentElement;var desc=root.querySelector('.moonmaid-description');var progress=root.querySelector('[data-action=progress]');var idx=-1,timer=null,speed=1;function goTo(n){idx=Math.max(-1,Math.min(n,timeline.steps.length-1));progress.value=Math.max(0,idx);desc.textContent=idx>=0?timeline.steps[idx].description:'';}function tick(){if(idx<timeline.steps.length-1){goTo(idx+1);}else{pause();}}function play(){pause();var ms=idx>=0&&idx<timeline.steps.length?timeline.steps[idx].duration_ms:400;timer=setInterval(tick,ms/speed);}function pause(){if(timer){clearInterval(timer);timer=null;}}root.querySelector('[data-action=prev]').addEventListener('click',function(){pause();goTo(idx-1);});root.querySelector('[data-action=play]').addEventListener('click',function(){if(timer){pause();}else{play();}});root.querySelector('[data-action=next]').addEventListener('click',function(){pause();goTo(idx+1);});progress.addEventListener('input',function(){pause();goTo(parseInt(progress.value));});root.querySelector('[data-action=speed]').addEventListener('change',function(e){speed=parseFloat(e.target.value);if(timer){play();}});})()</script>",
   )
-  buf.write_string(
-    (
-      #| var desc=root.querySelector('.moonmaid-description');
-    ),
-  )
-  buf.write_string(
-    (
-      #| var progress=root.querySelector('[data-action=progress]');
-    ),
-  )
-  buf.write_string(
-    (
-      #| var idx=-1,timer=null,speed=1;
-    ),
-  )
-  buf.write_string(
-    (
-      #| function goTo(n){idx=Math.max(-1,Math.min(n,timeline.steps.length-1));progress.value=Math.max(0,idx);desc.textContent=idx>=0?timeline.steps[idx].description:'';}
-    ),
-  )
-  buf.write_string(
-    (
-      #| function tick(){if(idx<timeline.steps.length-1){goTo(idx+1);}else{pause();}}
-    ),
-  )
-  buf.write_string(
-    (
-      #| function play(){pause();var ms=idx>=0&&idx<timeline.steps.length?timeline.steps[idx].duration_ms:400;timer=setInterval(tick,ms/speed);}
-    ),
-  )
-  buf.write_string(
-    (
-      #| function pause(){if(timer){clearInterval(timer);timer=null;}}
-    ),
-  )
-  buf.write_string(
-    (
-      #| root.querySelector('[data-action=prev]').addEventListener('click',function(){pause();goTo(idx-1);});
-    ),
-  )
-  buf.write_string(
-    (
-      #| root.querySelector('[data-action=play]').addEventListener('click',function(){if(timer){pause();}else{play();}});
-    ),
-  )
-  buf.write_string(
-    (
-      #| root.querySelector('[data-action=next]').addEventListener('click',function(){pause();goTo(idx+1);});
-    ),
-  )
-  buf.write_string(
-    (
-      #| progress.addEventListener('input',function(){pause();goTo(parseInt(progress.value));});
-    ),
-  )
-  buf.write_string(
-    (
-      #| root.querySelector('[data-action=speed]').addEventListener('change',function(e){speed=parseFloat(e.target.value);if(timer){play();}});
-    ),
-  )
-  buf.write_string("})()</script>")
 
   buf.write_string("</div>")
   buf.to_string()
