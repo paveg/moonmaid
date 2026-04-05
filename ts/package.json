@@ -3,10 +3,17 @@
   "version": "0.1.0",
   "type": "module",
   "exports": {
-    "./wasm-bridge": "./wasm-bridge/index.ts",
-    "./remark-plugin": "./remark-plugin/index.ts"
+    "./wasm-bridge": {
+      "types": "./dist/wasm-bridge/index.d.ts",
+      "import": "./dist/wasm-bridge/index.js"
+    },
+    "./remark-plugin": {
+      "types": "./dist/remark-plugin/index.d.ts",
+      "import": "./dist/remark-plugin/index.js"
+    }
   },
   "scripts": {
+    "build": "tsc",
     "test": "vitest run",
     "build:wasm": "cd .. && moon build --target wasm-gc --release"
   },
@@ -18,6 +25,7 @@
     "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {
+    "@types/node": "25.5.2",
     "typescript": "^5.8.0",
     "vitest": "^3.1.0"
   }

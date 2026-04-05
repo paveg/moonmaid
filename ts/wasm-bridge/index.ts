@@ -68,13 +68,14 @@ async function instantiate(wasmPath: string): Promise<MoonmaidInstance> {
     },
   }
 
-  // Compile with JS String Builtins enabled
+  // Compile with JS String Builtins enabled (Node.js 22+, Chrome 131+)
+  // TypeScript doesn't yet have types for the builtins option, so we cast.
   const compileOptions = {
     builtins: ['js-string'],
     importedStringConstants: '_',
-  } as WebAssembly.CompileOptions
+  }
 
-  const module = await WebAssembly.compile(bytes, compileOptions)
+  const module = await (WebAssembly.compile as Function)(bytes, compileOptions) as WebAssembly.Module
   const instance = await WebAssembly.instantiate(module, importObject)
   const exports = instance.exports as Record<string, unknown>
 
