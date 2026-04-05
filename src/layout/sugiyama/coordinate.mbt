@@ -9,19 +9,26 @@ pub fn assign_coordinates(
   edge_labels : Map[String, String],
   config : @types.LayoutConfig,
   transpose : Bool,
+  node_shapes : Map[String, @types.NodeShape],
 ) -> @types.PositionedGraph {
   let nh = @types.default_node_height
   let padding = config.padding
   let node_spacing = config.node_spacing
   let level_spacing = config.level_spacing
-  // Precompute widths for all nodes
+  // Precompute widths for all nodes, accounting for diamond visual expansion
   let node_widths : Map[String, Double] = Map::new()
   for i = 0; i < layers.length(); i = i + 1 {
     let layer = layers[i]
     for j = 0; j < layer.length(); j = j + 1 {
       let node_id = layer[j]
       let label = node_labels.get(node_id).unwrap_or(node_id)
-      node_widths[node_id] = @types.compute_node_width(label)
+      let base_width = @types.compute_node_width(label)
+      // Diamond shapes extend 1.2x beyond their rect bounds in rendering
+      let effective_width = match node_shapes.get(node_id) {
+        Some(Diamond) => base_width * 1.2
+        _ => base_width
+      }
+      node_widths[node_id] = effective_width
     }
   }
   // Compute layer spans (sum of node widths + spacing between nodes)

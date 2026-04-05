@@ -1,6 +1,6 @@
 ///|
 /// Eraser.io-inspired modern clean color palette with Tailwind pastel colors.
-let bg : String = "#fafbfc"
+let bg : String = "transparent"
 
 ///|
 let node_fill : String = "#ffffff"

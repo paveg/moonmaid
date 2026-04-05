@@ -67,23 +67,36 @@ pub fn render_graph(
         "dotted" => "2,4"
         _ => ""
       }
-      // Render as smooth cubic bezier curve instead of straight polyline
-      let (x1, y1) = edge.points[0]
-      let (x2, y2) = edge.points[edge.points.length() - 1]
-      let dx = (x2 - x1).abs()
-      let dy = (y2 - y1).abs()
-      // Control points: gentle S-curve
-      let (cx1, cy1, cx2, cy2) = if dy > dx {
-        // Mostly vertical (TD layout) — curve horizontally
-        (x1, y1 + dy * 0.4, x2, y2 - dy * 0.4)
+      // Multi-waypoint edges (e.g., backward edges routed around the diagram)
+      // use rounded polyline paths; simple 2-point edges use smooth bezier curves
+      let path_d = if edge.points.length() > 2 {
+        // Build SVG path with rounded corners through waypoints
+        let buf = StringBuilder::new()
+        let (x0, y0) = edge.points[0]
+        buf.write_string("M \{x0} \{y0}")
+        for pi = 1; pi < edge.points.length(); pi = pi + 1 {
+          let (px, py) = edge.points[pi]
+          buf.write_string(" L \{px} \{py}")
+        }
+        buf.to_string()
       } else {
-        // Mostly horizontal (LR layout) — curve vertically
-        (x1 + dx * 0.4, y1, x2 - dx * 0.4, y2)
+        let (x1, y1) = edge.points[0]
+        let (x2, y2) = edge.points[edge.points.length() - 1]
+        let dx = (x2 - x1).abs()
+        let dy = (y2 - y1).abs()
+        // Control points: gentle S-curve
+        let (cx1, cy1, cx2, cy2) = if dy > dx {
+          // Mostly vertical (TD layout) — curve horizontally
+          (x1, y1 + dy * 0.4, x2, y2 - dy * 0.4)
+        } else {
+          // Mostly horizontal (LR layout) — curve vertically
+          (x1 + dx * 0.4, y1, x2 - dx * 0.4, y2)
+        }
+        "M \{x1} \{y1} C \{cx1} \{cy1}, \{cx2} \{cy2}, \{x2} \{y2}"
       }
-      let bezier_d = "M \{x1} \{y1} C \{cx1} \{cy1}, \{cx2} \{cy2}, \{x2} \{y2}"
       children.push(
         Path(
-          d=bezier_d,
+          d=path_d,
           fill="none",
           stroke=edge_color,
           stroke_width=1.5,

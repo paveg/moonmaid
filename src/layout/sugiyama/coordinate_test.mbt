@@ -10,7 +10,13 @@ test "coordinate: linear chain vertical alignment" {
   let edge_labels : Map[String, String] = Map::new()
   let config = @types.LayoutConfig::default()
   let graph = assign_coordinates(
-    layers, labels, edges, edge_labels, config, false,
+    layers,
+    labels,
+    edges,
+    edge_labels,
+    config,
+    false,
+    Map::new(),
   )
   assert_eq(graph.nodes.length(), 3)
   // All nodes should have the same x (single node per layer, centered)
@@ -33,7 +39,13 @@ test "coordinate: wide layer horizontal spacing" {
   let edge_labels : Map[String, String] = Map::new()
   let config = @types.LayoutConfig::default()
   let graph = assign_coordinates(
-    layers, labels, edges, edge_labels, config, false,
+    layers,
+    labels,
+    edges,
+    edge_labels,
+    config,
+    false,
+    Map::new(),
   )
   assert_eq(graph.nodes.length(), 3)
   // Nodes should be horizontally spaced
@@ -53,7 +65,13 @@ test "single node coordinates" {
   let edge_labels : Map[String, String] = Map::new()
   let config = @types.LayoutConfig::default()
   let result = assign_coordinates(
-    layers, labels, edges, edge_labels, config, false,
+    layers,
+    labels,
+    edges,
+    edge_labels,
+    config,
+    false,
+    Map::new(),
   )
   assert_eq(result.nodes.length(), 1)
   assert_true(result.nodes[0].x >= 0.0)
@@ -69,7 +87,13 @@ test "empty graph coordinates" {
   let edge_labels : Map[String, String] = Map::new()
   let config = @types.LayoutConfig::default()
   let result = assign_coordinates(
-    layers, labels, edges, edge_labels, config, false,
+    layers,
+    labels,
+    edges,
+    edge_labels,
+    config,
+    false,
+    Map::new(),
   )
   assert_eq(result.nodes.length(), 0)
 }
@@ -86,7 +110,13 @@ test "coordinate: bounds enclose all nodes" {
   let edge_labels : Map[String, String] = Map::new()
   let config = @types.LayoutConfig::default()
   let graph = assign_coordinates(
-    layers, labels, edges, edge_labels, config, false,
+    layers,
+    labels,
+    edges,
+    edge_labels,
+    config,
+    false,
+    Map::new(),
   )
   let b = graph.bounds
   // All nodes should be within bounds

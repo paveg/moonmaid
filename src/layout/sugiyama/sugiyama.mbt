@@ -82,7 +82,13 @@ pub fn layout(
     }
     final_edge_labels[key] = edge_label_map.get(orig_key).unwrap_or("")
   }
-  // 10. Assign coordinates
+  // 10. Build node shape map for layout-aware spacing
+  let node_shapes : Map[String, @types.NodeShape] = Map::new()
+  for i = 0; i < def.nodes.length(); i = i + 1 {
+    let n = def.nodes[i]
+    node_shapes[n.id] = n.shape
+  }
+  // 11. Assign coordinates
   let graph = assign_coordinates(
     ordered_layers,
     node_labels,
@@ -90,8 +96,9 @@ pub fn layout(
     final_edge_labels,
     config,
     transpose,
+    node_shapes,
   )
-  // 11. Fix reversed edges: build lookup from (from,to) -> reversed index
+  // 12. Fix reversed edges: build lookup from (from,to) -> reversed index
   let reversed_edge_lookup : Map[String, Bool] = Map::new()
   for i = 0; i < acyclic.edges.length(); i = i + 1 {
     if reversed_set.get(i).unwrap_or(false) {
@@ -99,24 +106,100 @@ pub fn layout(
       reversed_edge_lookup[from + "->" + to] = true
     }
   }
+  // Build node position lookup for backward edge routing
+  let node_pos : Map[String, (Double, Double, Double, Double)] = Map::new()
+  for i = 0; i < graph.nodes.length(); i = i + 1 {
+    let n = graph.nodes[i]
+    node_pos[n.id] = (n.x, n.y, n.width, n.height)
+  }
+  // Compute diagram right edge for backward edge routing
+  let bounds = graph.bounds
+  let route_margin = 30.0
   let final_edges : Array[@types.PositionedEdge] = []
   for i = 0; i < graph.edges.length(); i = i + 1 {
     let edge = graph.edges[i]
     let key = edge.from_id + "->" + edge.to_id
     if reversed_edge_lookup.get(key).unwrap_or(false) {
-      let reversed_points : Array[(Double, Double)] = []
-      for k = edge.points.length() - 1; k >= 0; k = k - 1 {
-        reversed_points.push(edge.points[k])
+      // This is a backward edge: route around the right side of the diagram
+      // The acyclic edge goes from->to (forward in layers), but the original
+      // edge is to->from (backward). We reverse the points to get original direction.
+      let (from_id, to_id) = (edge.to_id, edge.from_id)
+      match (node_pos.get(from_id), node_pos.get(to_id)) {
+        (Some((fx, fy, fw, fh)), Some((tx, ty, tw, th))) =>
+          if transpose {
+            // LR layout: route via bottom of diagram
+            let route_y = bounds.y + bounds.height + route_margin
+            let sx = fx + fw
+            let sy = fy + fh / 2.0
+            let ex = tx
+            let ey = ty + th / 2.0
+            let points : Array[(Double, Double)] = [
+              (sx, sy),
+              (sx, route_y),
+              (ex, route_y),
+              (ex, ey),
+            ]
+            final_edges.push({ from_id, to_id, points, label: edge.label })
+          } else {
+            // TD layout: route via right side of diagram
+            let route_x = bounds.x + bounds.width + route_margin
+            let sx = fx + fw / 2.0
+            let sy = fy + fh
+            let ex = tx + tw / 2.0
+            let ey = ty
+            let arrow_offset = 8.0
+            let points : Array[(Double, Double)] = [
+              (sx, sy),
+              (route_x, sy),
+              (route_x, ey),
+              (ex, ey - arrow_offset),
+            ]
+            final_edges.push({ from_id, to_id, points, label: edge.label })
+          }
+        _ => {
+          // Fallback: just reverse points
+          let reversed_points : Array[(Double, Double)] = []
+          for k = edge.points.length() - 1; k >= 0; k = k - 1 {
+            reversed_points.push(edge.points[k])
+          }
+          final_edges.push({
+            from_id: edge.to_id,
+            to_id: edge.from_id,
+            points: reversed_points,
+            label: edge.label,
+          })
+        }
       }
-      final_edges.push({
-        from_id: edge.to_id,
-        to_id: edge.from_id,
-        points: reversed_points,
-        label: edge.label,
-      })
     } else {
       final_edges.push(edge)
     }
   }
-  { nodes: graph.nodes, edges: final_edges, bounds: graph.bounds }
+  // Recompute bounds to include backward edge routing paths
+  let all_nodes = graph.nodes
+  let mut max_x = bounds.x + bounds.width
+  let mut max_y = bounds.y + bounds.height
+  for i = 0; i < final_edges.length(); i = i + 1 {
+    let pts = final_edges[i].points
+    for j = 0; j < pts.length(); j = j + 1 {
+      let (px, py) = pts[j]
+      if px + config.padding > max_x {
+        max_x = px + config.padding
+      }
+      if py + config.padding > max_y {
+        max_y = py + config.padding
+      }
+    }
+  }
+  let final_bounds : @types.BoundingBox = if max_x > bounds.x + bounds.width ||
+    max_y > bounds.y + bounds.height {
+    {
+      x: bounds.x,
+      y: bounds.y,
+      width: max_x - bounds.x,
+      height: max_y - bounds.y,
+    }
+  } else {
+    bounds
+  }
+  { nodes: all_nodes, edges: final_edges, bounds: final_bounds }
 }
