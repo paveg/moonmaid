@@ -1,0 +1,200 @@
+///|
+/// Render a graph/flowchart diagram as a Virtual SVG Tree.
+///
+/// Layout: background rect, arrow marker + shadow defs, edges as polylines
+/// with optional dash styles and labels, node shapes (rect/diamond/rounded),
+/// and centered node labels.
+pub fn render_graph(
+  graph : @types.PositionedGraph,
+  def : @types.GraphDef,
+) -> SvgNode {
+  let children : Array[SvgNode] = []
+  let bounds = graph.bounds
+  let svg_width = bounds.width
+  let svg_height = bounds.height
+
+  // Build lookup maps for edge/node metadata
+  let edge_defs : Map[String, @types.GraphEdgeDef] = Map::new()
+  for i = 0; i < def.edges.length(); i = i + 1 {
+    let e = def.edges[i]
+    let key = e.from + "->" + e.to
+    edge_defs[key] = e
+  }
+  let node_defs : Map[String, @types.GraphNodeDef] = Map::new()
+  for i = 0; i < def.nodes.length(); i = i + 1 {
+    let n = def.nodes[i]
+    node_defs[n.id] = n
+  }
+
+  // Background rect
+  children.push(
+    Rect(
+      x=0.0,
+      y=0.0,
+      width=svg_width,
+      height=svg_height,
+      rx=0.0,
+      fill=bg,
+      stroke="none",
+      stroke_width=0.0,
+      filter="",
+    ),
+  )
+
+  // Arrow marker definition
+  let arrow_path = Path(
+    d="M 0 0 L 10 3.5 L 0 7 z",
+    fill=edge_color,
+    stroke="none",
+  )
+  let marker = Marker(id="arrow", children=[arrow_path])
+  children.push(Defs(children=[marker]))
+
+  // Edges (drawn behind nodes)
+  for i = 0; i < graph.edges.length(); i = i + 1 {
+    let edge = graph.edges[i]
+    if edge.points.length() >= 2 {
+      // Look up edge style from definition
+      let key = edge.from_id + "->" + edge.to_id
+      let dash = match edge_defs.get(key) {
+        Some(edef) =>
+          match edef.style {
+            "dashed" => "6,4"
+            "dotted" => "2,4"
+            _ => ""
+          }
+        None => ""
+      }
+      children.push(
+        Polyline(
+          points=edge.points,
+          stroke=edge_color,
+          stroke_width=1.5,
+          fill="none",
+          marker_end="arrow",
+          dash_array=dash,
+        ),
+      )
+      // Determine edge label: use positioned edge label, or fall back to weight
+      let effective_label = if edge.label.length() > 0 {
+        edge.label
+      } else {
+        match edge_defs.get(key) {
+          Some(edef) =>
+            match edef.weight {
+              Some(w) => w.to_string()
+              None => ""
+            }
+          None => ""
+        }
+      }
+      if effective_label.length() > 0 {
+        let mid_idx = edge.points.length() / 2
+        let (mx, my) = edge.points[mid_idx]
+        // White background rect behind label
+        let label_width = effective_label.length().to_double() * 8.0 + 8.0
+        let label_height = 16.0
+        children.push(
+          Rect(
+            x=mx - label_width / 2.0,
+            y=my - label_height / 2.0,
+            width=label_width,
+            height=label_height,
+            rx=4.0,
+            fill="#ffffff",
+            stroke="none",
+            stroke_width=0.0,
+            filter="",
+          ),
+        )
+        children.push(
+          Text(
+            x=mx,
+            y=my,
+            content=effective_label,
+            font_size=12.0,
+            fill=text_color,
+            anchor="middle",
+            font_family~,
+          ),
+        )
+      }
+    }
+  }
+
+  // Node shapes and labels
+  for i = 0; i < graph.nodes.length(); i = i + 1 {
+    let node = graph.nodes[i]
+    let shape = match node_defs.get(node.id) {
+      Some(ndef) => ndef.shape
+      None => @types.NodeShape::Rect
+    }
+    let cx = node.x + node.width / 2.0
+    let cy = node.y + node.height / 2.0
+    match shape {
+      Diamond => {
+        // Diamond polygon: 4 points (top, right, bottom, left)
+        let dw = node.width * 1.2 / 2.0
+        let dh = node.height * 1.2 / 2.0
+        let pts : Array[(Double, Double)] = [
+          (cx, cy - dh),
+          (cx + dw, cy),
+          (cx, cy + dh),
+          (cx - dw, cy),
+        ]
+        children.push(
+          Polygon(
+            points=pts,
+            fill=node_fill,
+            stroke=node_stroke,
+            stroke_width=1.5,
+            filter=shadow_filter_id,
+          ),
+        )
+      }
+      Rounded =>
+        children.push(
+          Rect(
+            x=node.x,
+            y=node.y,
+            width=node.width,
+            height=node.height,
+            rx=20.0,
+            fill=node_fill,
+            stroke=node_stroke,
+            stroke_width=1.5,
+            filter=shadow_filter_id,
+          ),
+        )
+      _ =>
+        // Default Rect shape
+        children.push(
+          Rect(
+            x=node.x,
+            y=node.y,
+            width=node.width,
+            height=node.height,
+            rx=14.0,
+            fill=node_fill,
+            stroke=node_stroke,
+            stroke_width=1.5,
+            filter=shadow_filter_id,
+          ),
+        )
+    }
+    // Node label
+    children.push(
+      Text(
+        x=cx,
+        y=cy,
+        content=node.label,
+        font_size=16.0,
+        fill=text_color,
+        anchor="middle",
+        font_family~,
+      ),
+    )
+  }
+
+  Svg(width=svg_width, height=svg_height, children~)
+}

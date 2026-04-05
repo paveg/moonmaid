@@ -30,6 +30,14 @@ pub(all) enum SvgNode {
     stroke~ : String,
     stroke_width~ : Double,
     fill~ : String,
-    marker_end~ : String
+    marker_end~ : String,
+    dash_array~ : String
+  )
+  Polygon(
+    points~ : Array[(Double, Double)],
+    fill~ : String,
+    stroke~ : String,
+    stroke_width~ : Double,
+    filter~ : String
   )
 }

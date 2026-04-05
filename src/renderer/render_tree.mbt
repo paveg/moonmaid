@@ -44,6 +44,7 @@ pub fn render_tree(graph : @types.PositionedGraph) -> SvgNode {
           stroke_width=1.5,
           fill="none",
           marker_end="arrow",
+          dash_array="",
         ),
       )
     }

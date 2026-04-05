@@ -121,7 +121,7 @@ pub fn emit(node : SvgNode) -> String {
       buf.write_string(escape_xml(stroke))
       buf.write_string("\"/>")
     }
-    Polyline(points~, stroke~, stroke_width~, fill~, marker_end~) => {
+    Polyline(points~, stroke~, stroke_width~, fill~, marker_end~, dash_array~) => {
       buf.write_string("<polyline points=\"")
       buf.write_string(fmt_points(points))
       buf.write_string("\" stroke=\"")
@@ -134,6 +134,28 @@ pub fn emit(node : SvgNode) -> String {
       if marker_end.length() > 0 {
         buf.write_string(" marker-end=\"url(#")
         buf.write_string(escape_xml(marker_end))
+        buf.write_string(")\"")
+      }
+      if dash_array.length() > 0 {
+        buf.write_string(" stroke-dasharray=\"")
+        buf.write_string(escape_xml(dash_array))
+        buf.write_string("\"")
+      }
+      buf.write_string("/>")
+    }
+    Polygon(points~, fill~, stroke~, stroke_width~, filter~) => {
+      buf.write_string("<polygon points=\"")
+      buf.write_string(fmt_points(points))
+      buf.write_string("\" fill=\"")
+      buf.write_string(escape_xml(fill))
+      buf.write_string("\" stroke=\"")
+      buf.write_string(escape_xml(stroke))
+      buf.write_string("\" stroke-width=\"")
+      buf.write_string(fmt_double(stroke_width))
+      buf.write_string("\"")
+      if filter.length() > 0 {
+        buf.write_string(" filter=\"url(#")
+        buf.write_string(escape_xml(filter))
         buf.write_string(")\"")
       }
       buf.write_string("/>")
