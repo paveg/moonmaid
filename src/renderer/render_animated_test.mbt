@@ -58,19 +58,8 @@ test "render_animated xss in description is escaped" {
     bounds: { x: 0.0, y: 0.0, width: 100.0, height: 80.0 },
   }
   let html = render_animated(graph, xss_timeline)
-  // The raw XSS payload should not appear outside the JSON blob.
-  // Inside JSON, the angle brackets are escaped by json_escape -> no issue.
-  // The JS uses textContent, not innerHTML, so the description is safe.
-  // Verify the description in the JSON is escaped.
-  assert_true(html.contains("\\\"<script>alert(1)<\\/script>\\\"") == false)
-  // The raw string should only exist inside a JSON string value, never as raw HTML
-  assert_false(
-    html.contains("<script>alert(1)</script>") &&
-    html.contains("<script>alert(1)</script>") == false,
-  )
-  // Verify textContent is used (not innerHTML)
-  assert_true(html.contains("textContent"))
-  assert_false(html.contains("innerHTML"))
+  // Raw <script> must NOT appear — it should be escaped in the JSON
+  assert_false(html.contains("<script>alert"))
 }
 
 ///|

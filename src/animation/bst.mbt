@@ -87,8 +87,8 @@ pub fn generate_bst_animation(
     let node = graph.nodes[i]
     pos[node.id] = (node.x, node.y)
   }
-  let node_width = 48.0
-  let node_height = 32.0
+  let node_width = @types.default_node_width
+  let node_height = @types.default_node_height
   let steps : Array[@types.AnimationStep] = []
   let mut root : AnimBSTNode? = None
   for i = 0; i < ops.length(); i = i + 1 {

@@ -1,9 +1,9 @@
 ///|
 /// Node dimensions for tree nodes.
-let node_width : Double = 48.0
+let node_width : Double = @types.default_node_width
 
 ///|
-let node_height : Double = 32.0
+let node_height : Double = @types.default_node_height
 
 ///|
 /// Internal BST node used during layout computation.

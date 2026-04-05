@@ -167,3 +167,31 @@ test "lex @ alone produces At and Eof" {
   let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
   assert_eq(kinds, [@parser.Token::At, @parser.Token::Eof])
 }
+
+///|
+/// Boundary: max valid integer (999999) is accepted.
+test "lex integer at max boundary 999999" {
+  let tokens = @parser.lex("999999")
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [@parser.Token::IntLit(999999), @parser.Token::Eof])
+}
+
+///|
+/// Boundary: integer just over max (1000000) raises error.
+test "lex integer over max boundary 1000000 raises error" {
+  let result : Result[Array[@parser.Located], Unit] = Ok(@parser.lex("1000000")) catch {
+    _ => Err(())
+  }
+  assert_eq(result, Err(()))
+}
+
+///|
+/// Boundary: very large integer raises error.
+test "lex very large integer raises error" {
+  let result : Result[Array[@parser.Located], Unit] = Ok(
+    @parser.lex("99999999999999"),
+  ) catch {
+    _ => Err(())
+  }
+  assert_eq(result, Err(()))
+}

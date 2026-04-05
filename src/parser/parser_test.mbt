@@ -191,3 +191,44 @@ test "parse tree bst @animate with empty insert list" {
     }),
   )
 }
+
+///|
+/// Boundary: exactly 1024 operations (at node limit) succeeds.
+test "parse tree at 1024 node limit succeeds" {
+  let buf = StringBuilder::new()
+  buf.write_string("tree bst { insert(")
+  for i = 0; i < 1024; i = i + 1 {
+    if i > 0 {
+      buf.write_string(", ")
+    }
+    buf.write_string(i.to_string())
+  }
+  buf.write_string(") }")
+  let input = buf.to_string()
+  let result = @parser.parse_with_limits(input, @types.Limits::default())
+  match result {
+    TreeDiagram(def) => assert_eq(def.operations.length(), 1024)
+    _ => fail("Expected TreeDiagram")
+  }
+}
+
+///|
+/// Boundary: 1025 operations (one over node limit) raises error.
+test "parse tree at 1025 nodes raises error" {
+  let buf = StringBuilder::new()
+  buf.write_string("tree bst { insert(")
+  for i = 0; i < 1025; i = i + 1 {
+    if i > 0 {
+      buf.write_string(", ")
+    }
+    buf.write_string(i.to_string())
+  }
+  buf.write_string(") }")
+  let input = buf.to_string()
+  let result : Result[@types.Diagram, Unit] = Ok(
+    @parser.parse_with_limits(input, @types.Limits::default()),
+  ) catch {
+    _ => Err(())
+  }
+  assert_eq(result, Err(()))
+}

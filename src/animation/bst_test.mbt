@@ -59,6 +59,33 @@ test "deep insertion path" {
 }
 
 ///|
+/// Boundary: large tree (50 nodes) has reasonable step count and non-negative positions.
+test "large tree 50 nodes has valid positions" {
+  let ops : Array[Int] = []
+  for i = 0; i < 50; i = i + 1 {
+    ops.push(i)
+  }
+  let def : @types.TreeDef = { kind: BST, operations: ops }
+  let config = @types.LayoutConfig::default()
+  let timeline = @animation.generate_bst_animation(def, config)
+  // Should have a reasonable number of steps (at least 50 AddNode steps)
+  assert_true(timeline.steps.length() >= 50)
+  // All AddNode actions should have non-negative coordinates
+  for i = 0; i < timeline.steps.length(); i = i + 1 {
+    let step = timeline.steps[i]
+    for j = 0; j < step.actions.length(); j = j + 1 {
+      match step.actions[j] {
+        AddNode(x~, y~, ..) => {
+          assert_true(x >= 0.0)
+          assert_true(y >= 0.0)
+        }
+        _ => ()
+      }
+    }
+  }
+}
+
+///|
 /// Test: AddNode has valid (non-negative) coordinates.
 test "AddNode has valid coordinates" {
   let def : @types.TreeDef = { kind: BST, operations: [5, 3] }

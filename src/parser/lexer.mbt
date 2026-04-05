@@ -52,12 +52,25 @@ fn is_alnum(c : Char) -> Bool {
 }
 
 ///|
-fn Lexer::lex_int(self : Lexer) -> Int {
+fn Lexer::lex_int(self : Lexer) -> Int raise @types.MoonmaidError {
+  let max_value = 999999
   let mut n = 0
   while self.pos < self.len {
     let c = Int::unsafe_to_char(self.input[self.pos].to_int())
     if is_digit(c) {
-      n = n * 10 + (c.to_int() - '0'.to_int())
+      let digit = c.to_int() - '0'.to_int()
+      n = n * 10 + digit
+      if n > max_value {
+        // Drain remaining digits
+        self.advance()
+        while self.pos < self.len &&
+              is_digit(Int::unsafe_to_char(self.input[self.pos].to_int())) {
+          self.advance()
+        }
+        raise @types.MoonmaidError::of(
+          "Integer literal too large (max: \{max_value})",
+        )
+      }
       self.advance()
     } else {
       break

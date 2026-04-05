@@ -208,3 +208,46 @@ test "render invalid input returns useful error message" {
   // Should contain a meaningful message, not just "Parse or render error"
   assert_false(svg.contains("Parse or render error"))
 }
+
+///|
+/// Security regression: animated tree output never contains raw <script> tag.
+test "animated tree output has no raw script tag" {
+  let html = @lib.render("tree bst @animate { insert(5) }")
+  assert_false(html.contains("<script>alert"))
+}
+
+///|
+/// Security regression: large input (100KB) returns error SVG gracefully.
+test "large input 100KB returns error svg gracefully" {
+  let buf = StringBuilder::new()
+  for i = 0; i < 100000; i = i + 1 {
+    buf.write_char('a')
+  }
+  let svg = @lib.render(buf.to_string())
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains("#cf222e"))
+  assert_true(svg.contains("Input too large"))
+}
+
+///|
+/// Security regression: invalid hex color in highlight falls back safely.
+test "invalid hex color in highlight does not inject attributes" {
+  let input =
+    #| array {
+    #|   [1, 2, 3]
+    #|   highlight(0, color=fff_onclick_x, label="a")
+    #| }
+  let svg = @lib.render(input)
+  assert_true(svg.contains("<svg"))
+  // The color value should be XML-escaped, not injected as raw attribute
+  assert_false(svg.contains("onclick"))
+}
+
+///|
+/// Regression: overflow integer in DSL produces error SVG.
+test "overflow integer in array produces error svg" {
+  let svg = @lib.render("array { [1000001] }")
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains("#cf222e"))
+  assert_true(svg.contains("too large"))
+}

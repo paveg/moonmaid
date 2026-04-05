@@ -73,21 +73,6 @@ pub fn emit(node : SvgNode) -> String {
       buf.write_string(fmt_double(stroke_width))
       buf.write_string("\"/>")
     }
-    Line(x1~, y1~, x2~, y2~, stroke~, stroke_width~) => {
-      buf.write_string("<line x1=\"")
-      buf.write_string(fmt_double(x1))
-      buf.write_string("\" y1=\"")
-      buf.write_string(fmt_double(y1))
-      buf.write_string("\" x2=\"")
-      buf.write_string(fmt_double(x2))
-      buf.write_string("\" y2=\"")
-      buf.write_string(fmt_double(y2))
-      buf.write_string("\" stroke=\"")
-      buf.write_string(escape_xml(stroke))
-      buf.write_string("\" stroke-width=\"")
-      buf.write_string(fmt_double(stroke_width))
-      buf.write_string("\"/>")
-    }
     Text(x~, y~, content~, font_size~, fill~, anchor~, font_family~) => {
       buf.write_string("<text x=\"")
       buf.write_string(fmt_double(x))
