@@ -370,6 +370,23 @@ fn Parser::parse_edge_attrs(
 }
 
 ///|
+/// Register a node in the map. A labeled version wins over id-as-label.
+fn register_graph_node(
+  node_map : Map[String, @types.GraphNodeDef],
+  id : String,
+  label : String,
+  shape : @types.NodeShape,
+) -> Unit {
+  match node_map.get(id) {
+    Some(existing) =>
+      if existing.label == existing.id && label != id {
+        node_map[id] = { id, label, shape }
+      }
+    None => node_map[id] = { id, label, shape }
+  }
+}
+
+///|
 /// Parse a graph body: { edge_chain ; edge_chain ; ... }
 /// Edge chain: node_ref -> node_ref [attrs] -> node_ref [attrs] ...
 fn Parser::parse_graph_body(
@@ -380,29 +397,14 @@ fn Parser::parse_graph_body(
   self.expect(LBrace)
   let edges : Array[@types.GraphEdgeDef] = []
   let node_map : Map[String, @types.GraphNodeDef] = Map::new()
-  // Helper to register a node (labeled version wins)
-  fn register_node(
-    node_map : Map[String, @types.GraphNodeDef],
-    id : String,
-    label : String,
-  ) -> Unit {
-    match node_map.get(id) {
-      Some(existing) =>
-        // Labeled version wins over id-as-label
-        if existing.label == existing.id && label != id {
-          node_map[id] = { id, label, shape: @types.NodeShape::Rect }
-        }
-      None => node_map[id] = { id, label, shape: @types.NodeShape::Rect }
-    }
-  }
   while self.peek() != RBrace && self.peek() != Eof {
     let (first_id, first_label) = self.parse_graph_node_ref()
-    register_node(node_map, first_id, first_label)
+    register_graph_node(node_map, first_id, first_label, @types.NodeShape::Rect)
     let mut prev_id = first_id
     while self.peek() == Arrow {
       let _ = self.advance() // consume ->
       let (next_id, next_label) = self.parse_graph_node_ref()
-      register_node(node_map, next_id, next_label)
+      register_graph_node(node_map, next_id, next_label, @types.NodeShape::Rect)
       let (weight, style) = self.parse_edge_attrs()
       edges.push({ from: prev_id, to: next_id, weight, style, label: "" })
       if edges.length() > limits.max_edges {
@@ -481,24 +483,9 @@ fn Parser::parse_flowchart_body(
   self.expect(LBrace)
   let edges : Array[@types.GraphEdgeDef] = []
   let node_map : Map[String, @types.GraphNodeDef] = Map::new()
-  fn register_fc_node(
-    node_map : Map[String, @types.GraphNodeDef],
-    id : String,
-    label : String,
-    shape : @types.NodeShape,
-  ) -> Unit {
-    match node_map.get(id) {
-      Some(existing) =>
-        // Labeled version wins over id-as-label
-        if existing.label == existing.id && label != id {
-          node_map[id] = { id, label, shape }
-        }
-      None => node_map[id] = { id, label, shape }
-    }
-  }
   while self.peek() != RBrace && self.peek() != Eof {
     let (first_id, first_label, first_shape) = self.parse_flowchart_node_ref()
-    register_fc_node(node_map, first_id, first_label, first_shape)
+    register_graph_node(node_map, first_id, first_label, first_shape)
     let mut prev_id = first_id
     while self.peek() == Arrow {
       let _ = self.advance() // consume ->
@@ -519,7 +506,7 @@ fn Parser::parse_flowchart_body(
         ""
       }
       let (next_id, next_label, next_shape) = self.parse_flowchart_node_ref()
-      register_fc_node(node_map, next_id, next_label, next_shape)
+      register_graph_node(node_map, next_id, next_label, next_shape)
       edges.push({
         from: prev_id,
         to: next_id,

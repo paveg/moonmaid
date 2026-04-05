@@ -54,16 +54,15 @@ pub fn render_graph(
   for i = 0; i < graph.edges.length(); i = i + 1 {
     let edge = graph.edges[i]
     if edge.points.length() >= 2 {
-      // Look up edge style from definition
       let key = edge.from_id + "->" + edge.to_id
-      let dash = match edge_defs.get(key) {
-        Some(edef) =>
-          match edef.style {
-            "dashed" => "6,4"
-            "dotted" => "2,4"
-            _ => ""
-          }
+      let style = match edge_defs.get(key) {
+        Some(edef) => edef.style
         None => ""
+      }
+      let dash = match style {
+        "dashed" => "6,4"
+        "dotted" => "2,4"
+        _ => ""
       }
       children.push(
         Polyline(
@@ -75,17 +74,12 @@ pub fn render_graph(
           dash_array=dash,
         ),
       )
-      // Determine edge label: use positioned edge label, or fall back to weight
       let effective_label = if edge.label.length() > 0 {
         edge.label
       } else {
         match edge_defs.get(key) {
-          Some(edef) =>
-            match edef.weight {
-              Some(w) => w.to_string()
-              None => ""
-            }
-          None => ""
+          Some({ weight: Some(w), .. }) => w.to_string()
+          _ => ""
         }
       }
       if effective_label.length() > 0 {
@@ -133,7 +127,6 @@ pub fn render_graph(
     let cy = node.y + node.height / 2.0
     match shape {
       Diamond => {
-        // Diamond polygon: 4 points (top, right, bottom, left)
         let dw = node.width * 1.2 / 2.0
         let dh = node.height * 1.2 / 2.0
         let pts : Array[(Double, Double)] = [
@@ -152,35 +145,25 @@ pub fn render_graph(
           ),
         )
       }
-      Rounded =>
+      _ => {
+        let rx = match shape {
+          Rounded => 20.0
+          _ => 14.0
+        }
         children.push(
           Rect(
             x=node.x,
             y=node.y,
             width=node.width,
             height=node.height,
-            rx=20.0,
+            rx~,
             fill=node_fill,
             stroke=node_stroke,
             stroke_width=1.5,
             filter=shadow_filter_id,
           ),
         )
-      _ =>
-        // Default Rect shape
-        children.push(
-          Rect(
-            x=node.x,
-            y=node.y,
-            width=node.width,
-            height=node.height,
-            rx=14.0,
-            fill=node_fill,
-            stroke=node_stroke,
-            stroke_width=1.5,
-            filter=shadow_filter_id,
-          ),
-        )
+      }
     }
     // Node label
     children.push(

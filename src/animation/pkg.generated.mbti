@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "paveg/moonmaid/animation"
+
+import {
+  "paveg/moonmaid/types",
+}
+
+// Values
+pub fn generate_bst_animation(@types.TreeDef, @types.LayoutConfig) -> @types.AnimationTimeline
+
+pub fn generate_sort_animation(@types.ArrayAnimDef, @types.LayoutConfig) -> @types.AnimationTimeline
+
+pub fn timeline_to_json(@types.AnimationTimeline) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

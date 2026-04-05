@@ -1,0 +1,66 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "paveg/moonmaid/parser"
+
+import {
+  "paveg/moonmaid/types",
+}
+
+// Values
+pub fn lex(String) -> Array[Located] raise @types.MoonmaidError
+
+pub fn parse(String) -> @types.Diagram raise @types.MoonmaidError
+
+pub fn parse_with_limits(String, @types.Limits) -> @types.Diagram raise @types.MoonmaidError
+
+// Errors
+
+// Types and methods
+pub(all) struct Located {
+  token : Token
+  line : Int
+  col : Int
+}
+pub impl Eq for Located
+pub impl Show for Located
+
+pub(all) enum Token {
+  TkArray
+  TkTree
+  TkBST
+  TkInsert
+  TkHighlight
+  TkAnimate
+  TkSort
+  TkBubble
+  TkInsertion
+  TkSelection
+  TkQuick
+  TkGraph
+  TkDirected
+  TkUndirected
+  TkFlowchart
+  IntLit(Int)
+  StringLit(String)
+  Ident(String)
+  At
+  LBrace
+  RBrace
+  LBracket
+  RBracket
+  LParen
+  RParen
+  Comma
+  DotDot
+  Eq
+  Arrow
+  Colon
+  Pipe
+  Eof
+}
+pub impl Eq for Token
+pub impl Show for Token
+
+// Type aliases
+
+// Traits
+

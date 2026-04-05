@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "paveg/moonmaid/layout/sugiyama"
+
+import {
+  "paveg/moonmaid/types",
+}
+
+// Values
+pub fn assign_coordinates(Array[Array[String]], Map[String, String], Array[(String, String)], Map[String, String], @types.LayoutConfig, Bool) -> @types.PositionedGraph
+
+pub fn assign_layers(Array[String], Array[(String, String)]) -> Map[String, Int]
+
+pub fn layout(@types.GraphDef, @types.LayoutConfig) -> @types.PositionedGraph raise @types.MoonmaidError
+
+pub fn minimize_crossings(Array[Array[String]], Array[(String, String)]) -> Array[Array[String]]
+
+pub fn remove_cycles(Array[String], Array[(String, String)]) -> AcyclicResult
+
+// Errors
+
+// Types and methods
+pub(all) struct AcyclicResult {
+  edges : Array[(String, String)]
+  reversed : Array[Int]
+}
+pub impl Eq for AcyclicResult
+pub impl Show for AcyclicResult
+
+// Type aliases
+
+// Traits
+

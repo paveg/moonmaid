@@ -65,22 +65,25 @@ pub fn layout(
     FlowLR => true
     _ => false
   }
-  // 8. Update edge labels for potentially reversed edges
+  // 8. Build reversed-edge index set for O(1) lookup
+  let reversed_set : Map[Int, Bool] = Map::new()
+  for i = 0; i < acyclic.reversed.length(); i = i + 1 {
+    reversed_set[acyclic.reversed[i]] = true
+  }
+  // 9. Update edge labels for potentially reversed edges
   let final_edge_labels : Map[String, String] = Map::new()
   for i = 0; i < acyclic.edges.length(); i = i + 1 {
     let (from, to) = acyclic.edges[i]
     let key = from + "->" + to
-    // Try original direction first, then reversed
-    let orig_key = if is_reversed(acyclic.reversed, i) {
+    let orig_key = if reversed_set.get(i).unwrap_or(false) {
       to + "->" + from
     } else {
-      from + "->" + to
+      key
     }
-    let label = edge_label_map.get(orig_key).unwrap_or("")
-    final_edge_labels[key] = label
+    final_edge_labels[key] = edge_label_map.get(orig_key).unwrap_or("")
   }
-  // 9. Assign coordinates
-  let mut graph = assign_coordinates(
+  // 10. Assign coordinates
+  let graph = assign_coordinates(
     ordered_layers,
     node_labels,
     acyclic.edges,
@@ -88,23 +91,19 @@ pub fn layout(
     config,
     transpose,
   )
-  // 10. Fix reversed edges: swap arrow direction back
+  // 11. Fix reversed edges: build lookup from (from,to) -> reversed index
+  let reversed_edge_lookup : Map[String, Bool] = Map::new()
+  for i = 0; i < acyclic.edges.length(); i = i + 1 {
+    if reversed_set.get(i).unwrap_or(false) {
+      let (from, to) = acyclic.edges[i]
+      reversed_edge_lookup[from + "->" + to] = true
+    }
+  }
   let final_edges : Array[@types.PositionedEdge] = []
   for i = 0; i < graph.edges.length(); i = i + 1 {
     let edge = graph.edges[i]
-    // Find if this edge corresponds to a reversed edge
-    let mut was_reversed = false
-    for j = 0; j < acyclic.edges.length(); j = j + 1 {
-      let (from, to) = acyclic.edges[j]
-      if from == edge.from_id &&
-        to == edge.to_id &&
-        is_reversed(acyclic.reversed, j) {
-        was_reversed = true
-        break
-      }
-    }
-    if was_reversed {
-      // Swap from/to and reverse points
+    let key = edge.from_id + "->" + edge.to_id
+    if reversed_edge_lookup.get(key).unwrap_or(false) {
       let reversed_points : Array[(Double, Double)] = []
       for k = edge.points.length() - 1; k >= 0; k = k - 1 {
         reversed_points.push(edge.points[k])
@@ -119,16 +118,5 @@ pub fn layout(
       final_edges.push(edge)
     }
   }
-  graph = { nodes: graph.nodes, edges: final_edges, bounds: graph.bounds }
-  graph
-}
-
-///|
-fn is_reversed(reversed : Array[Int], idx : Int) -> Bool {
-  for i = 0; i < reversed.length(); i = i + 1 {
-    if reversed[i] == idx {
-      return true
-    }
-  }
-  false
+  { nodes: graph.nodes, edges: final_edges, bounds: graph.bounds }
 }

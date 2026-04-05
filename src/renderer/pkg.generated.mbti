@@ -1,0 +1,50 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "paveg/moonmaid/renderer"
+
+import {
+  "paveg/moonmaid/types",
+}
+
+// Values
+pub fn emit(SvgNode) -> String
+
+pub fn escape_xml(String) -> String
+
+pub fn render_animated(@types.PositionedGraph, @types.AnimationTimeline) -> String
+
+pub fn render_array(@types.PositionedGraph, @types.ArrayDef) -> SvgNode
+
+pub fn render_graph(@types.PositionedGraph, @types.GraphDef) -> SvgNode
+
+pub fn render_tree(@types.PositionedGraph) -> SvgNode
+
+pub fn resolve_highlight_color(String) -> String
+
+pub fn resolve_highlight_style(String) -> HighlightStyle
+
+// Errors
+
+// Types and methods
+pub(all) struct HighlightStyle {
+  fill : String
+  stroke : String
+  text_color : String
+}
+pub impl Eq for HighlightStyle
+pub impl Show for HighlightStyle
+
+pub(all) enum SvgNode {
+  Svg(width~ : Double, height~ : Double, children~ : Array[SvgNode])
+  Rect(x~ : Double, y~ : Double, width~ : Double, height~ : Double, rx~ : Double, fill~ : String, stroke~ : String, stroke_width~ : Double, filter~ : String)
+  Text(x~ : Double, y~ : Double, content~ : String, font_size~ : Double, fill~ : String, anchor~ : String, font_family~ : String)
+  Defs(children~ : Array[SvgNode])
+  Marker(id~ : String, children~ : Array[SvgNode])
+  Path(d~ : String, fill~ : String, stroke~ : String)
+  Polyline(points~ : Array[(Double, Double)], stroke~ : String, stroke_width~ : Double, fill~ : String, marker_end~ : String, dash_array~ : String)
+  Polygon(points~ : Array[(Double, Double)], fill~ : String, stroke~ : String, stroke_width~ : Double, filter~ : String)
+}
+
+// Type aliases
+
+// Traits
+

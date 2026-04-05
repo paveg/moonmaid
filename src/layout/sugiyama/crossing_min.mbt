@@ -22,15 +22,9 @@ pub fn minimize_crossings(
       None => up_neighbors[to] = [from]
     }
   }
-  // Build position lookup for a layer
   let result : Array[Array[String]] = []
   for i = 0; i < layers.length(); i = i + 1 {
-    let layer = layers[i]
-    let copy : Array[String] = []
-    for j = 0; j < layer.length(); j = j + 1 {
-      copy.push(layer[j])
-    }
-    result.push(copy)
+    result.push(layers[i].copy())
   }
   // 4 iterations: alternate top-down and bottom-up
   for iter = 0; iter < 4; iter = iter + 1 {

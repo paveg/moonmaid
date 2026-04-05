@@ -1,0 +1,202 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "paveg/moonmaid/types"
+
+// Values
+pub fn compute_bounds(Array[PositionedNode], Double) -> BoundingBox
+
+pub let default_node_height : Double
+
+pub let default_node_width : Double
+
+// Errors
+pub suberror MoonmaidError {
+  MoonmaidError(String)
+}
+pub fn MoonmaidError::of(String) -> Self
+
+// Types and methods
+pub(all) enum AnimationAction {
+  Highlight(node_id~ : String, color~ : String)
+  Unhighlight(node_id~ : String)
+  TraverseEdge(from~ : String, to~ : String, color~ : String)
+  AddNode(node_id~ : String, x~ : Double, y~ : Double, width~ : Double, height~ : Double, label~ : String)
+  RemoveNode(node_id~ : String)
+  SwapNodes(a~ : String, b~ : String)
+  UpdateLabel(node_id~ : String, text~ : String)
+  CompareNodes(a~ : String, b~ : String)
+  Annotate(text~ : String, x~ : Double, y~ : Double)
+}
+pub impl Eq for AnimationAction
+pub impl Show for AnimationAction
+
+pub(all) struct AnimationStep {
+  actions : Array[AnimationAction]
+  description : String
+  duration_ms : Int
+}
+pub impl Eq for AnimationStep
+pub impl Show for AnimationStep
+
+pub(all) struct AnimationTimeline {
+  steps : Array[AnimationStep]
+}
+pub impl Eq for AnimationTimeline
+pub impl Show for AnimationTimeline
+
+pub(all) struct ArrayAnimDef {
+  elements : Array[Int]
+  algorithm : SortAlgorithm
+}
+pub impl Eq for ArrayAnimDef
+pub impl Show for ArrayAnimDef
+
+pub(all) struct ArrayDef {
+  elements : Array[Int]
+  highlights : Array[Highlight]
+}
+pub impl Eq for ArrayDef
+pub impl Show for ArrayDef
+
+pub(all) struct BoundingBox {
+  x : Double
+  y : Double
+  width : Double
+  height : Double
+}
+pub impl Eq for BoundingBox
+pub impl Show for BoundingBox
+
+pub(all) enum Diagram {
+  ArrayDiagram(ArrayDef)
+  TreeDiagram(TreeDef)
+  AnimatedTreeDiagram(TreeDef)
+  AnimatedArrayDiagram(ArrayAnimDef)
+  GraphDiagram(GraphDef)
+}
+pub impl Eq for Diagram
+pub impl Show for Diagram
+
+pub(all) struct GraphDef {
+  direction : GraphDirection
+  nodes : Array[GraphNodeDef]
+  edges : Array[GraphEdgeDef]
+}
+pub impl Eq for GraphDef
+pub impl Show for GraphDef
+
+pub(all) enum GraphDirection {
+  Directed
+  Undirected
+  FlowTD
+  FlowLR
+}
+pub impl Eq for GraphDirection
+pub impl Show for GraphDirection
+
+pub(all) struct GraphEdgeDef {
+  from : String
+  to : String
+  weight : Int?
+  style : String
+  label : String
+}
+pub impl Eq for GraphEdgeDef
+pub impl Show for GraphEdgeDef
+
+pub(all) struct GraphNodeDef {
+  id : String
+  label : String
+  shape : NodeShape
+}
+pub impl Eq for GraphNodeDef
+pub impl Show for GraphNodeDef
+
+pub(all) struct Highlight {
+  start : Int
+  end : Int
+  color : String
+  label : String
+}
+pub impl Eq for Highlight
+pub impl Show for Highlight
+
+pub(all) struct LayoutConfig {
+  node_spacing : Double
+  level_spacing : Double
+  padding : Double
+}
+pub fn LayoutConfig::default() -> Self
+pub impl Eq for LayoutConfig
+pub impl Show for LayoutConfig
+
+pub(all) struct Limits {
+  max_nodes : Int
+  max_array_size : Int
+  max_edges : Int
+}
+pub fn Limits::default() -> Self
+pub impl Eq for Limits
+pub impl Show for Limits
+
+pub(all) enum NodeShape {
+  Rect
+  Diamond
+  Rounded
+}
+pub impl Eq for NodeShape
+pub impl Show for NodeShape
+
+pub(all) struct PositionedEdge {
+  from_id : String
+  to_id : String
+  points : Array[(Double, Double)]
+  label : String
+}
+pub impl Eq for PositionedEdge
+pub impl Show for PositionedEdge
+
+pub(all) struct PositionedGraph {
+  nodes : Array[PositionedNode]
+  edges : Array[PositionedEdge]
+  bounds : BoundingBox
+}
+pub impl Eq for PositionedGraph
+pub impl Show for PositionedGraph
+
+pub(all) struct PositionedNode {
+  id : String
+  x : Double
+  y : Double
+  width : Double
+  height : Double
+  label : String
+}
+pub impl Eq for PositionedNode
+pub impl Show for PositionedNode
+
+pub(all) enum SortAlgorithm {
+  Bubble
+  Insertion
+  Selection
+  Quick
+}
+pub impl Eq for SortAlgorithm
+pub impl Show for SortAlgorithm
+
+pub(all) struct TreeDef {
+  kind : TreeKind
+  operations : Array[Int]
+}
+pub impl Eq for TreeDef
+pub impl Show for TreeDef
+
+pub(all) enum TreeKind {
+  BST
+}
+pub impl Eq for TreeKind
+pub impl Show for TreeKind
+
+// Type aliases
+
+// Traits
+
