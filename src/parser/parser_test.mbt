@@ -135,3 +135,59 @@ test "parse highlight with single index" {
     }),
   )
 }
+
+///|
+test "parse tree bst @animate produces AnimatedTreeDiagram" {
+  let result = @parser.parse("tree bst @animate { insert(5, 3, 7) }")
+  assert_eq(
+    result,
+    @types.Diagram::AnimatedTreeDiagram({
+      kind: @types.TreeKind::BST,
+      operations: [5, 3, 7],
+    }),
+  )
+}
+
+///|
+test "parse tree bst without @animate produces TreeDiagram" {
+  let result = @parser.parse("tree bst { insert(5, 3, 7) }")
+  assert_eq(
+    result,
+    @types.Diagram::TreeDiagram({
+      kind: @types.TreeKind::BST,
+      operations: [5, 3, 7],
+    }),
+  )
+}
+
+///|
+test "parse array @animate raises error" {
+  let result : Result[@types.Diagram, Unit] = Ok(
+    @parser.parse("array @animate { [1] }"),
+  ) catch {
+    _ => Err(())
+  }
+  assert_eq(result, Err(()))
+}
+
+///|
+test "parse tree bst @unknown raises error" {
+  let result : Result[@types.Diagram, Unit] = Ok(
+    @parser.parse("tree bst @unknown { insert(1) }"),
+  ) catch {
+    _ => Err(())
+  }
+  assert_eq(result, Err(()))
+}
+
+///|
+test "parse tree bst @animate with empty insert list" {
+  let result = @parser.parse("tree bst @animate { insert() }")
+  assert_eq(
+    result,
+    @types.Diagram::AnimatedTreeDiagram({
+      kind: @types.TreeKind::BST,
+      operations: [],
+    }),
+  )
+}

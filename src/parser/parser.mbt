@@ -147,31 +147,6 @@ fn Parser::parse_array_body(
 }
 
 ///|
-/// Parse tree body: bst { insert(int, ...) }
-fn Parser::parse_tree_body(
-  self : Parser,
-  limits : @types.Limits,
-) -> @types.TreeDef raise @types.MoonmaidError {
-  let kind = match self.advance() {
-    TkBST => @types.TreeKind::BST
-    tok =>
-      raise @types.MoonmaidError::of("expected tree kind (bst), got \{tok}")
-  }
-  self.expect(LBrace)
-  self.expect(TkInsert)
-  self.expect(LParen)
-  let operations = self.parse_int_list(RParen)
-  self.expect(RParen)
-  if operations.length() > limits.max_nodes {
-    raise @types.MoonmaidError::of(
-      "node count \{operations.length()} exceeds limit \{limits.max_nodes}",
-    )
-  }
-  self.expect(RBrace)
-  { kind, operations }
-}
-
-///|
 /// Parse a diagram with explicit resource limits.
 pub fn parse_with_limits(
   input : String,
@@ -181,12 +156,52 @@ pub fn parse_with_limits(
   let parser = Parser::new(tokens)
   let diagram = match parser.advance() {
     TkArray => {
+      if parser.peek() == At {
+        let _ = parser.advance() // consume @
+        let directive = parser.advance()
+        raise @types.MoonmaidError::of(
+          "array does not support @\{directive} directive",
+        )
+      }
       let def = parser.parse_array_body(limits)
       @types.Diagram::ArrayDiagram(def)
     }
     TkTree => {
-      let def = parser.parse_tree_body(limits)
-      @types.Diagram::TreeDiagram(def)
+      // Consume the tree kind (e.g. bst) before checking for directives
+      let kind = match parser.advance() {
+        TkBST => @types.TreeKind::BST
+        tok =>
+          raise @types.MoonmaidError::of("expected tree kind (bst), got \{tok}")
+      }
+      // Check for optional @animate directive between kind and body
+      let animated = if parser.peek() == At {
+        let _ = parser.advance() // consume @
+        match parser.advance() {
+          TkAnimate => true
+          tok =>
+            raise @types.MoonmaidError::of("unknown directive @\{tok} for tree")
+        }
+      } else {
+        false
+      }
+      // Parse the body { insert(...) }
+      parser.expect(LBrace)
+      parser.expect(TkInsert)
+      parser.expect(LParen)
+      let operations = parser.parse_int_list(RParen)
+      parser.expect(RParen)
+      if operations.length() > limits.max_nodes {
+        raise @types.MoonmaidError::of(
+          "node count \{operations.length()} exceeds limit \{limits.max_nodes}",
+        )
+      }
+      parser.expect(RBrace)
+      let def : @types.TreeDef = { kind, operations }
+      if animated {
+        @types.Diagram::AnimatedTreeDiagram(def)
+      } else {
+        @types.Diagram::TreeDiagram(def)
+      }
     }
     tok => raise @types.MoonmaidError::of("unknown diagram type: \{tok}")
   }
