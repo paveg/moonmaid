@@ -1,0 +1,24 @@
+{
+  "name": "moonmaid",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./wasm-bridge": "./wasm-bridge/index.ts",
+    "./remark-plugin": "./remark-plugin/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "build:wasm": "cd .. && moon build --target wasm-gc --release"
+  },
+  "dependencies": {
+    "@types/mdast": "^4.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
+    "unified": "^11.0.0",
+    "unist-util-visit": "^5.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vitest": "^3.1.0"
+  }
+}

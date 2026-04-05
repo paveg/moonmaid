@@ -1,0 +1,12 @@
+import {
+  "paveg/moonmaid/types",
+  "paveg/moonmaid/parser",
+  "paveg/moonmaid/layout/grid" @grid,
+  "paveg/moonmaid/layout/tree" @tree,
+  "paveg/moonmaid/renderer",
+  "paveg/moonmaid/animation",
+}
+
+options(
+  link: { "wasm-gc": { "exports": [ "render" ] } },
+)

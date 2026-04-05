@@ -1,0 +1,10 @@
+{
+  "name": "paveg/moonmaid",
+  "version": "0.1.0",
+  "readme": "README.md",
+  "repository": "https://github.com/paveg/moonmaid",
+  "license": "MIT",
+  "keywords": ["diagram", "visualization", "algorithm", "data-structure", "svg"],
+  "description": "A MoonBit-powered diagram tool for algorithm and data structure visualization",
+  "source": "src"
+}
