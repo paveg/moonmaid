@@ -30,7 +30,7 @@ pub(all) enum TreeKind {
 } derive(Show, Eq)
 
 ///| Layout output: a node with computed position.
-pub struct PositionedNode {
+pub(all) struct PositionedNode {
   id : String
   x : Double
   y : Double
@@ -40,7 +40,7 @@ pub struct PositionedNode {
 } derive(Show, Eq)
 
 ///| Layout output: an edge with routing points.
-pub struct PositionedEdge {
+pub(all) struct PositionedEdge {
   from_id : String
   to_id : String
   points : Array[(Double, Double)]
@@ -48,7 +48,7 @@ pub struct PositionedEdge {
 } derive(Show, Eq)
 
 ///| Bounding box for the entire diagram.
-pub struct BoundingBox {
+pub(all) struct BoundingBox {
   x : Double
   y : Double
   width : Double
@@ -56,14 +56,14 @@ pub struct BoundingBox {
 } derive(Show, Eq)
 
 ///| Complete layout result.
-pub struct PositionedGraph {
+pub(all) struct PositionedGraph {
   nodes : Array[PositionedNode]
   edges : Array[PositionedEdge]
   bounds : BoundingBox
 } derive(Show, Eq)
 
 ///| Layout configuration.
-pub struct LayoutConfig {
+pub(all) struct LayoutConfig {
   node_spacing : Double
   level_spacing : Double
   padding : Double
