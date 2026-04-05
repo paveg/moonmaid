@@ -185,6 +185,66 @@ pub fn render_graph(graph : @types.PositionedGraph, def : @types.GraphDef) -> Sv
 | Renderer | 3-4 (SVG structure, weight labels, dashed edges) |
 | E2E | 4-5 (full pipeline, error cases, boundary) |
 
+## Flowchart DSL (Extension)
+
+### Syntax
+
+```
+flowchart TD {
+  A["Process data"] -> B{"Valid?"}
+  B ->|Yes| C["Save"]
+  B ->|No| D["Error"]
+}
+```
+
+### Direction
+
+- `TD` — top-down (default, same as `graph directed` layout)
+- `LR` — left-right (transpose: x↔y in coordinate assignment)
+
+### Node Shapes
+
+Encoded in syntax brackets:
+- `A["label"]` — rectangle (default processing step)
+- `A{"label"}` — diamond (decision/condition)
+- `A("label")` — rounded rectangle (start/end/terminal)
+- `A` — rectangle with ID as label (shorthand)
+
+### Edge Labels
+
+`->|label|` attaches a label to the edge. Stored as `GraphEdgeDef.label` (extend the existing `label` field on `PositionedEdge`).
+
+### Types
+
+```moonbit
+pub(all) enum NodeShape { Rect; Diamond; Rounded } derive(Show, Eq)
+```
+
+`GraphNodeDef` extended with `shape : NodeShape` field.
+
+`GraphDef` extended with `is_flowchart : Bool` and `direction : GraphDirection` generalized to include LR layout.
+
+Or cleaner: extend `GraphDirection` enum:
+```moonbit
+pub(all) enum GraphDirection { Directed; Undirected; FlowTD; FlowLR } derive(Show, Eq)
+```
+
+### Renderer Changes
+
+- Diamond nodes: rotated square SVG `<polygon>` with 4 points
+- Rounded nodes: `rx=20` (more rounded than default rx=14)
+- Edge labels: small text at midpoint with white background rect (same as weight labels)
+- LR direction: transpose all coordinates (swap x/y) after Sugiyama
+
+### Parser Changes
+
+New tokens: `TkFlowchart`, `TkTD`, `TkLR`
+New syntax: `->|label|` edge labels, `{}` / `[]` / `()` node shape brackets
+
+### Priority
+
+This is the highest-priority feature for me.wiki migration (56 mermaid flowchart blocks).
+
 ## Acknowledgements
 
 Sugiyama implementation references [diago](https://github.com/moonbit-community/diago)'s Railway engine for algorithmic approach (MFAS cycle removal, barycenter crossing minimization).
