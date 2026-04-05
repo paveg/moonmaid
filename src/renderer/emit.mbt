@@ -112,14 +112,30 @@ pub fn emit(node : SvgNode) -> String {
       emit_children(buf, children)
       buf.write_string("</marker>")
     }
-    Path(d~, fill~, stroke~) => {
+    Path(d~, fill~, stroke~, stroke_width~, marker_end~, dash_array~) => {
       buf.write_string("<path d=\"")
       buf.write_string(escape_xml(d))
       buf.write_string("\" fill=\"")
       buf.write_string(escape_xml(fill))
       buf.write_string("\" stroke=\"")
       buf.write_string(escape_xml(stroke))
-      buf.write_string("\"/>")
+      buf.write_string("\"")
+      if stroke_width > 0.0 {
+        buf.write_string(" stroke-width=\"")
+        buf.write_string(fmt_double(stroke_width))
+        buf.write_string("\"")
+      }
+      if marker_end.length() > 0 {
+        buf.write_string(" marker-end=\"url(#")
+        buf.write_string(escape_xml(marker_end))
+        buf.write_string(")\"")
+      }
+      if dash_array.length() > 0 {
+        buf.write_string(" stroke-dasharray=\"")
+        buf.write_string(escape_xml(dash_array))
+        buf.write_string("\"")
+      }
+      buf.write_string("/>")
     }
     Polyline(points~, stroke~, stroke_width~, fill~, marker_end~, dash_array~) => {
       buf.write_string("<polyline points=\"")

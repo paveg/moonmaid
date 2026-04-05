@@ -97,7 +97,7 @@ pub fn render_array(
           x=cx,
           y=cy,
           content=node.label,
-          font_size=16.0,
+          font_size=14.0,
           fill=label_color,
           anchor="middle",
           font_family=font_mono,

@@ -24,25 +24,32 @@ pub fn render_tree(graph : @types.PositionedGraph) -> SvgNode {
     ),
   )
 
-  // Arrow marker definition
+  // Arrow marker — soft open chevron
   let arrow_path = Path(
-    d="M 0 0 L 10 3.5 L 0 7 z",
-    fill=edge_color,
-    stroke="none",
+    d="M 1 1 L 7 4 L 1 7",
+    fill="none",
+    stroke=edge_color,
+    stroke_width=1.5,
+    marker_end="",
+    dash_array="",
   )
   let marker = Marker(id="arrow", children=[arrow_path])
   children.push(Defs(children=[marker]))
 
-  // Edges (drawn behind nodes)
+  // Edges as smooth bezier curves (drawn behind nodes)
   for i = 0; i < graph.edges.length(); i = i + 1 {
     let edge = graph.edges[i]
     if edge.points.length() >= 2 {
+      let (x1, y1) = edge.points[0]
+      let (x2, y2) = edge.points[edge.points.length() - 1]
+      let dy = (y2 - y1).abs()
+      let bezier_d = "M \{x1} \{y1} C \{x1} \{y1 + dy * 0.4}, \{x2} \{y2 - dy * 0.4}, \{x2} \{y2}"
       children.push(
-        Polyline(
-          points=edge.points,
+        Path(
+          d=bezier_d,
+          fill="none",
           stroke=edge_color,
           stroke_width=1.5,
-          fill="none",
           marker_end="arrow",
           dash_array="",
         ),
@@ -73,7 +80,7 @@ pub fn render_tree(graph : @types.PositionedGraph) -> SvgNode {
         x=cx,
         y=cy,
         content=node.label,
-        font_size=16.0,
+        font_size=14.0,
         fill=text_color,
         anchor="middle",
         font_family~,

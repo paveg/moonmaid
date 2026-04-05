@@ -130,7 +130,7 @@ pub fn estimate_text_width(text : String, font_size : Double) -> Double {
 ///|
 /// Compute node width based on label text, with minimum and padding.
 pub fn compute_node_width(label : String) -> Double {
-  let text_width = estimate_text_width(label, 16.0)
+  let text_width = estimate_text_width(label, 14.0)
   let padding = 24.0 // 12px padding on each side
   let min_width = default_node_width // 56.0
   let result = text_width + padding

@@ -30,7 +30,7 @@ test "render_tree produces svg with polylines and labels" {
   assert_true(svg.contains("<svg"))
   assert_true(svg.contains("</svg>"))
   // Should have edges
-  assert_true(svg.contains("<polyline"))
+  assert_true(svg.contains("<path d="))
   // Should contain node labels
   assert_true(svg.contains(">5<"))
   assert_true(svg.contains(">3<"))
@@ -84,7 +84,7 @@ test "single tree node renders without edges" {
   let node = render_tree(graph)
   let svg = emit(node)
   assert_true(svg.contains(">42<"))
-  assert_false(svg.contains("<polyline"))
+  assert_false(svg.contains("marker-end"))
 }
 
 ///|

@@ -41,11 +41,14 @@ pub fn render_graph(
     ),
   )
 
-  // Arrow marker definition
+  // Arrow marker definition — small, soft, open chevron style
   let arrow_path = Path(
-    d="M 0 0 L 10 3.5 L 0 7 z",
-    fill=edge_color,
-    stroke="none",
+    d="M 1 1 L 7 4 L 1 7",
+    fill="none",
+    stroke=edge_color,
+    stroke_width=1.5,
+    marker_end="",
+    dash_array="",
   )
   let marker = Marker(id="arrow", children=[arrow_path])
   children.push(Defs(children=[marker]))
@@ -64,12 +67,26 @@ pub fn render_graph(
         "dotted" => "2,4"
         _ => ""
       }
+      // Render as smooth cubic bezier curve instead of straight polyline
+      let (x1, y1) = edge.points[0]
+      let (x2, y2) = edge.points[edge.points.length() - 1]
+      let dx = (x2 - x1).abs()
+      let dy = (y2 - y1).abs()
+      // Control points: gentle S-curve
+      let (cx1, cy1, cx2, cy2) = if dy > dx {
+        // Mostly vertical (TD layout) — curve horizontally
+        (x1, y1 + dy * 0.4, x2, y2 - dy * 0.4)
+      } else {
+        // Mostly horizontal (LR layout) — curve vertically
+        (x1 + dx * 0.4, y1, x2 - dx * 0.4, y2)
+      }
+      let bezier_d = "M \{x1} \{y1} C \{cx1} \{cy1}, \{cx2} \{cy2}, \{x2} \{y2}"
       children.push(
-        Polyline(
-          points=edge.points,
+        Path(
+          d=bezier_d,
+          fill="none",
           stroke=edge_color,
           stroke_width=1.5,
-          fill="none",
           marker_end="arrow",
           dash_array=dash,
         ),
@@ -174,7 +191,7 @@ pub fn render_graph(
         x=cx,
         y=cy,
         content=node.label,
-        font_size=16.0,
+        font_size=14.0,
         fill=text_color,
         anchor="middle",
         font_family~,

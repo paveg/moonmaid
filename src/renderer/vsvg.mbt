@@ -24,7 +24,14 @@ pub(all) enum SvgNode {
   )
   Defs(children~ : Array[SvgNode])
   Marker(id~ : String, children~ : Array[SvgNode])
-  Path(d~ : String, fill~ : String, stroke~ : String)
+  Path(
+    d~ : String,
+    fill~ : String,
+    stroke~ : String,
+    stroke_width~ : Double,
+    marker_end~ : String,
+    dash_array~ : String
+  )
   Polyline(
     points~ : Array[(Double, Double)],
     stroke~ : String,

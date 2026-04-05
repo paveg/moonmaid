@@ -28,7 +28,7 @@ test "render_graph produces svg with labels and polylines" {
   assert_true(svg.contains("<svg"))
   assert_true(svg.contains(">A<"))
   assert_true(svg.contains(">B<"))
-  assert_true(svg.contains("<polyline"))
+  assert_true(svg.contains("<path d="))
 }
 
 ///|
@@ -141,7 +141,7 @@ test "render single node no edges" {
   }
   let svg = emit(render_graph(graph, def))
   assert_true(svg.contains(">Solo<"))
-  assert_false(svg.contains("<polyline"))
+  assert_false(svg.contains("marker-end"))
 }
 
 ///|

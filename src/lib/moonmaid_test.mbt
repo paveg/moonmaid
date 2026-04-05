@@ -24,7 +24,7 @@ test "render tree bst produces svg with labels and edges" {
   assert_true(svg.contains(">5<"))
   assert_true(svg.contains(">3<"))
   assert_true(svg.contains(">7<"))
-  assert_true(svg.contains("<polyline"))
+  assert_true(svg.contains("<path d="))
 }
 
 ///|
@@ -72,7 +72,7 @@ test "render single tree node has no edges" {
   let svg = @lib.render("tree bst { insert(1) }")
   assert_true(svg.contains("<svg"))
   assert_true(svg.contains(">1<"))
-  assert_false(svg.contains("<polyline"))
+  assert_false(svg.contains("marker-end"))
 }
 
 ///|
@@ -320,7 +320,7 @@ test "graph directed A B C renders svg with labels and polylines" {
   assert_true(svg.contains(">A<"))
   assert_true(svg.contains(">B<"))
   assert_true(svg.contains(">C<"))
-  assert_true(svg.contains("<polyline"))
+  assert_true(svg.contains("<path d="))
 }
 
 ///|
