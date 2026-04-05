@@ -110,18 +110,22 @@ pub let default_node_height : Double = 40.0
 
 ///|
 /// Estimate the pixel width of a text string for SVG layout.
-/// Uses heuristics: ASCII chars ~8.5px each, CJK/wide chars ~16px each at font-size 16.
+/// Heuristics calibrated for Inter/system fonts at 14px:
+///   ASCII ~8px, CJK (Hiragana/Katakana/Kanji) ~14.5px
 pub fn estimate_text_width(text : String, font_size : Double) -> Double {
-  let scale = font_size / 16.0
+  let scale = font_size / 14.0
   let mut width = 0.0
   for i = 0; i < text.length(); i = i + 1 {
     let code = text[i].to_int()
     if code > 0x2E80 {
-      // CJK Unified Ideographs, Hiragana, Katakana, etc.
-      width = width + 16.0
+      // CJK Unified Ideographs, Hiragana, Katakana, fullwidth
+      width = width + 14.5
+    } else if code > 0x0080 {
+      // Extended Latin, Greek, Cyrillic etc.
+      width = width + 9.0
     } else {
-      // ASCII and basic Latin
-      width = width + 8.5
+      // ASCII
+      width = width + 8.0
     }
   }
   width * scale
@@ -131,7 +135,7 @@ pub fn estimate_text_width(text : String, font_size : Double) -> Double {
 /// Compute node width based on label text, with minimum and padding.
 pub fn compute_node_width(label : String) -> Double {
   let text_width = estimate_text_width(label, 14.0)
-  let padding = 24.0 // 12px padding on each side
+  let padding = 32.0 // 16px padding on each side
   let min_width = default_node_width // 56.0
   let result = text_width + padding
   if result > min_width {
