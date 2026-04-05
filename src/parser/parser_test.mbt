@@ -272,6 +272,202 @@ test "parse tree bst @animate with empty insert list" {
 }
 
 ///|
+test "parse simple directed graph" {
+  let result = @parser.parse("graph directed { A -> B }")
+  match result {
+    GraphDiagram(def) => {
+      assert_eq(def.direction, @types.GraphDirection::Directed)
+      assert_eq(def.edges.length(), 1)
+      assert_eq(def.edges[0].from, "A")
+      assert_eq(def.edges[0].to, "B")
+      // nodes collected from edges
+      assert_eq(def.nodes.length(), 2)
+    }
+    _ => fail("Expected GraphDiagram")
+  }
+}
+
+///|
+test "parse graph with labeled nodes" {
+  let result = @parser.parse("graph directed { A(\"Start\") -> B(\"End\") }")
+  match result {
+    GraphDiagram(def) => {
+      let mut found_a = false
+      let mut found_b = false
+      for i = 0; i < def.nodes.length(); i = i + 1 {
+        if def.nodes[i].id == "A" {
+          assert_eq(def.nodes[i].label, "Start")
+          found_a = true
+        }
+        if def.nodes[i].id == "B" {
+          assert_eq(def.nodes[i].label, "End")
+          found_b = true
+        }
+      }
+      assert_true(found_a)
+      assert_true(found_b)
+    }
+    _ => fail("Expected GraphDiagram")
+  }
+}
+
+///|
+test "parse graph with edge attributes" {
+  let result = @parser.parse(
+    "graph directed { A -> B [weight=5, style=dashed] }",
+  )
+  match result {
+    GraphDiagram(def) => {
+      assert_eq(def.edges[0].weight, Some(5))
+      assert_eq(def.edges[0].style, "dashed")
+    }
+    _ => fail("Expected GraphDiagram")
+  }
+}
+
+///|
+test "parse graph multiple edges" {
+  let input =
+    #| graph directed {
+    #|   A -> B
+    #|   B -> C
+    #| }
+  let result = @parser.parse(input)
+  match result {
+    GraphDiagram(def) => {
+      assert_eq(def.edges.length(), 2)
+      assert_eq(def.edges[0].from, "A")
+      assert_eq(def.edges[0].to, "B")
+      assert_eq(def.edges[1].from, "B")
+      assert_eq(def.edges[1].to, "C")
+    }
+    _ => fail("Expected GraphDiagram")
+  }
+}
+
+///|
+test "parse graph @animate errors" {
+  let result : Result[@types.Diagram, Unit] = Ok(
+    @parser.parse("graph directed @animate { A -> B }"),
+  ) catch {
+    _ => Err(())
+  }
+  assert_eq(result, Err(()))
+}
+
+///|
+test "parse graph empty body" {
+  let result = @parser.parse("graph directed { }")
+  match result {
+    GraphDiagram(def) => {
+      assert_eq(def.edges.length(), 0)
+      assert_eq(def.nodes.length(), 0)
+    }
+    _ => fail("Expected GraphDiagram")
+  }
+}
+
+///|
+test "parse flowchart TD basic" {
+  let result = @parser.parse(
+    "flowchart TD { A[\"Process\"] -> B{\"Decision?\"} }",
+  )
+  match result {
+    GraphDiagram(def) => {
+      assert_eq(def.direction, @types.GraphDirection::FlowTD)
+      assert_eq(def.edges.length(), 1)
+      assert_eq(def.edges[0].from, "A")
+      assert_eq(def.edges[0].to, "B")
+    }
+    _ => fail("Expected GraphDiagram")
+  }
+}
+
+///|
+test "parse flowchart with edge labels" {
+  let result = @parser.parse("flowchart TD { A ->|Yes| B }")
+  match result {
+    GraphDiagram(def) => assert_eq(def.edges[0].label, "Yes")
+    _ => fail("Expected GraphDiagram")
+  }
+}
+
+///|
+test "parse flowchart LR direction" {
+  let result = @parser.parse("flowchart LR { A -> B }")
+  match result {
+    GraphDiagram(def) => assert_eq(def.direction, @types.GraphDirection::FlowLR)
+    _ => fail("Expected GraphDiagram")
+  }
+}
+
+///|
+test "parse flowchart edge chain" {
+  let result = @parser.parse("flowchart TD { A -> B -> C }")
+  match result {
+    GraphDiagram(def) => {
+      assert_eq(def.edges.length(), 2)
+      assert_eq(def.edges[0].from, "A")
+      assert_eq(def.edges[0].to, "B")
+      assert_eq(def.edges[1].from, "B")
+      assert_eq(def.edges[1].to, "C")
+      assert_eq(def.nodes.length(), 3)
+    }
+    _ => fail("Expected GraphDiagram")
+  }
+}
+
+///|
+test "parse flowchart node shapes" {
+  let result = @parser.parse(
+    "flowchart TD { A[\"Rect\"] -> B{\"Diamond\"} -> C(\"Rounded\") }",
+  )
+  match result {
+    GraphDiagram(def) => {
+      let mut rect_ok = false
+      let mut diamond_ok = false
+      let mut rounded_ok = false
+      for i = 0; i < def.nodes.length(); i = i + 1 {
+        if def.nodes[i].id == "A" {
+          assert_eq(def.nodes[i].shape, @types.NodeShape::Rect)
+          assert_eq(def.nodes[i].label, "Rect")
+          rect_ok = true
+        }
+        if def.nodes[i].id == "B" {
+          assert_eq(def.nodes[i].shape, @types.NodeShape::Diamond)
+          assert_eq(def.nodes[i].label, "Diamond")
+          diamond_ok = true
+        }
+        if def.nodes[i].id == "C" {
+          assert_eq(def.nodes[i].shape, @types.NodeShape::Rounded)
+          assert_eq(def.nodes[i].label, "Rounded")
+          rounded_ok = true
+        }
+      }
+      assert_true(rect_ok)
+      assert_true(diamond_ok)
+      assert_true(rounded_ok)
+    }
+    _ => fail("Expected GraphDiagram")
+  }
+}
+
+///|
+test "parse graph edge count limit exceeded" {
+  let limits : @types.Limits = {
+    max_nodes: 1024,
+    max_array_size: 256,
+    max_edges: 1,
+  }
+  let result : Result[@types.Diagram, Unit] = Ok(
+    @parser.parse_with_limits("graph directed { A -> B -> C }", limits),
+  ) catch {
+    _ => Err(())
+  }
+  assert_eq(result, Err(()))
+}
+
+///|
 /// Boundary: exactly 1024 operations (at node limit) succeeds.
 test "parse tree at 1024 node limit succeeds" {
   let buf = StringBuilder::new()

@@ -244,6 +244,44 @@ pub fn parse_with_limits(
         @types.Diagram::TreeDiagram(def)
       }
     }
+    TkGraph => {
+      let dir = match parser.advance() {
+        TkDirected => @types.GraphDirection::Directed
+        TkUndirected => @types.GraphDirection::Undirected
+        tok =>
+          raise @types.MoonmaidError::of(
+            "expected 'directed' or 'undirected', got \{tok}",
+          )
+      }
+      if parser.peek() == At {
+        let _ = parser.advance()
+        let tok = parser.advance()
+        raise @types.MoonmaidError::of(
+          "graph does not support @\{tok} directive",
+        )
+      }
+      let def = parser.parse_graph_body(dir, limits)
+      @types.Diagram::GraphDiagram(def)
+    }
+    TkFlowchart => {
+      let dir = match parser.advance() {
+        Ident("TD") => @types.GraphDirection::FlowTD
+        Ident("LR") => @types.GraphDirection::FlowLR
+        tok =>
+          raise @types.MoonmaidError::of(
+            "expected 'TD' or 'LR' after flowchart, got \{tok}",
+          )
+      }
+      if parser.peek() == At {
+        let _ = parser.advance()
+        let tok = parser.advance()
+        raise @types.MoonmaidError::of(
+          "flowchart does not support @\{tok} directive",
+        )
+      }
+      let def = parser.parse_flowchart_body(dir, limits)
+      @types.Diagram::GraphDiagram(def)
+    }
     tok => raise @types.MoonmaidError::of("unknown diagram type: \{tok}")
   }
   // Ensure no trailing tokens
@@ -253,6 +291,254 @@ pub fn parse_with_limits(
       raise @types.MoonmaidError::of("unexpected token after diagram: \{tok}")
   }
   diagram
+}
+
+///|
+/// Parse a graph node reference: Ident optionally followed by ( StringLit ) for label.
+fn Parser::parse_graph_node_ref(
+  self : Parser,
+) -> (String, String) raise @types.MoonmaidError {
+  let id = match self.advance() {
+    Ident(name) => name
+    tok =>
+      raise @types.MoonmaidError::of("expected node identifier, got \{tok}")
+  }
+  let label = if self.peek() == LParen {
+    let _ = self.advance() // consume (
+    let s = match self.advance() {
+      StringLit(s) => s
+      tok =>
+        raise @types.MoonmaidError::of(
+          "expected string label in (), got \{tok}",
+        )
+    }
+    self.expect(RParen)
+    s
+  } else {
+    id
+  }
+  (id, label)
+}
+
+///|
+/// Parse optional edge attributes: [weight=INT, style=IDENT]
+fn Parser::parse_edge_attrs(
+  self : Parser,
+) -> (Int?, String) raise @types.MoonmaidError {
+  if self.peek() != LBracket {
+    return (None, "solid")
+  }
+  let _ = self.advance() // consume [
+  let mut weight : Int? = None
+  let mut style = "solid"
+  // Parse comma-separated key=value pairs
+  let mut first = true
+  while self.peek() != RBracket {
+    if not(first) {
+      self.expect(Comma)
+    }
+    first = false
+    match self.advance() {
+      Ident("weight") => {
+        self.expect(Eq)
+        match self.advance() {
+          IntLit(n) => weight = Some(n)
+          tok =>
+            raise @types.MoonmaidError::of(
+              "expected integer for weight, got \{tok}",
+            )
+        }
+      }
+      Ident("style") => {
+        self.expect(Eq)
+        match self.advance() {
+          Ident(s) => style = s
+          tok =>
+            raise @types.MoonmaidError::of(
+              "expected identifier for style, got \{tok}",
+            )
+        }
+      }
+      tok =>
+        raise @types.MoonmaidError::of(
+          "expected 'weight' or 'style' in edge attrs, got \{tok}",
+        )
+    }
+  }
+  self.expect(RBracket)
+  (weight, style)
+}
+
+///|
+/// Parse a graph body: { edge_chain ; edge_chain ; ... }
+/// Edge chain: node_ref -> node_ref [attrs] -> node_ref [attrs] ...
+fn Parser::parse_graph_body(
+  self : Parser,
+  direction : @types.GraphDirection,
+  limits : @types.Limits,
+) -> @types.GraphDef raise @types.MoonmaidError {
+  self.expect(LBrace)
+  let edges : Array[@types.GraphEdgeDef] = []
+  let node_map : Map[String, @types.GraphNodeDef] = Map::new()
+  // Helper to register a node (labeled version wins)
+  fn register_node(
+    node_map : Map[String, @types.GraphNodeDef],
+    id : String,
+    label : String,
+  ) -> Unit {
+    match node_map.get(id) {
+      Some(existing) =>
+        // Labeled version wins over id-as-label
+        if existing.label == existing.id && label != id {
+          node_map[id] = { id, label, shape: @types.NodeShape::Rect }
+        }
+      None => node_map[id] = { id, label, shape: @types.NodeShape::Rect }
+    }
+  }
+  while self.peek() != RBrace && self.peek() != Eof {
+    let (first_id, first_label) = self.parse_graph_node_ref()
+    register_node(node_map, first_id, first_label)
+    let mut prev_id = first_id
+    while self.peek() == Arrow {
+      let _ = self.advance() // consume ->
+      let (next_id, next_label) = self.parse_graph_node_ref()
+      register_node(node_map, next_id, next_label)
+      let (weight, style) = self.parse_edge_attrs()
+      edges.push({ from: prev_id, to: next_id, weight, style, label: "" })
+      if edges.length() > limits.max_edges {
+        raise @types.MoonmaidError::of(
+          "edge count \{edges.length()} exceeds limit \{limits.max_edges}",
+        )
+      }
+      prev_id = next_id
+    }
+  }
+  self.expect(RBrace)
+  let nodes : Array[@types.GraphNodeDef] = []
+  node_map.each(fn(_k, v) { nodes.push(v) })
+  { direction, nodes, edges }
+}
+
+///|
+/// Parse a flowchart node reference with shape detection:
+/// A["label"] -> Rect, A{"label"} -> Diamond, A("label") -> Rounded, A -> Rect with id as label
+fn Parser::parse_flowchart_node_ref(
+  self : Parser,
+) -> (String, String, @types.NodeShape) raise @types.MoonmaidError {
+  let id = match self.advance() {
+    Ident(name) => name
+    tok =>
+      raise @types.MoonmaidError::of("expected node identifier, got \{tok}")
+  }
+  match self.peek() {
+    LBracket => {
+      let _ = self.advance()
+      let label = match self.advance() {
+        StringLit(s) => s
+        tok =>
+          raise @types.MoonmaidError::of(
+            "expected string label in [], got \{tok}",
+          )
+      }
+      self.expect(RBracket)
+      (id, label, @types.NodeShape::Rect)
+    }
+    LBrace => {
+      let _ = self.advance()
+      let label = match self.advance() {
+        StringLit(s) => s
+        tok =>
+          raise @types.MoonmaidError::of(
+            "expected string label in {}, got \{tok}",
+          )
+      }
+      self.expect(RBrace)
+      (id, label, @types.NodeShape::Diamond)
+    }
+    LParen => {
+      let _ = self.advance()
+      let label = match self.advance() {
+        StringLit(s) => s
+        tok =>
+          raise @types.MoonmaidError::of(
+            "expected string label in (), got \{tok}",
+          )
+      }
+      self.expect(RParen)
+      (id, label, @types.NodeShape::Rounded)
+    }
+    _ => (id, id, @types.NodeShape::Rect)
+  }
+}
+
+///|
+/// Parse a flowchart body: { edge_chain ; edge_chain ; ... }
+fn Parser::parse_flowchart_body(
+  self : Parser,
+  direction : @types.GraphDirection,
+  limits : @types.Limits,
+) -> @types.GraphDef raise @types.MoonmaidError {
+  self.expect(LBrace)
+  let edges : Array[@types.GraphEdgeDef] = []
+  let node_map : Map[String, @types.GraphNodeDef] = Map::new()
+  fn register_fc_node(
+    node_map : Map[String, @types.GraphNodeDef],
+    id : String,
+    label : String,
+    shape : @types.NodeShape,
+  ) -> Unit {
+    match node_map.get(id) {
+      Some(existing) =>
+        // Labeled version wins over id-as-label
+        if existing.label == existing.id && label != id {
+          node_map[id] = { id, label, shape }
+        }
+      None => node_map[id] = { id, label, shape }
+    }
+  }
+  while self.peek() != RBrace && self.peek() != Eof {
+    let (first_id, first_label, first_shape) = self.parse_flowchart_node_ref()
+    register_fc_node(node_map, first_id, first_label, first_shape)
+    let mut prev_id = first_id
+    while self.peek() == Arrow {
+      let _ = self.advance() // consume ->
+      // Check for edge label: ->|label|
+      let edge_label = if self.peek() == Pipe {
+        let _ = self.advance() // consume |
+        let label = match self.advance() {
+          Ident(s) => s
+          StringLit(s) => s
+          tok =>
+            raise @types.MoonmaidError::of(
+              "expected edge label after |, got \{tok}",
+            )
+        }
+        self.expect(Pipe)
+        label
+      } else {
+        ""
+      }
+      let (next_id, next_label, next_shape) = self.parse_flowchart_node_ref()
+      register_fc_node(node_map, next_id, next_label, next_shape)
+      edges.push({
+        from: prev_id,
+        to: next_id,
+        weight: None,
+        style: "solid",
+        label: edge_label,
+      })
+      if edges.length() > limits.max_edges {
+        raise @types.MoonmaidError::of(
+          "edge count \{edges.length()} exceeds limit \{limits.max_edges}",
+        )
+      }
+      prev_id = next_id
+    }
+  }
+  self.expect(RBrace)
+  let nodes : Array[@types.GraphNodeDef] = []
+  node_map.each(fn(_k, v) { nodes.push(v) })
+  { direction, nodes, edges }
 }
 
 ///|

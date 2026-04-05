@@ -90,7 +90,7 @@ pub fn LayoutConfig::default() -> LayoutConfig {
 
 ///|
 /// Resource limits for security.
-pub struct Limits {
+pub(all) struct Limits {
   max_nodes : Int
   max_array_size : Int
   max_edges : Int
