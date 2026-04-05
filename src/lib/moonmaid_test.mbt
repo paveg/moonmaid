@@ -251,3 +251,61 @@ test "overflow integer in array produces error svg" {
   assert_true(svg.contains("#cf222e"))
   assert_true(svg.contains("too large"))
 }
+
+// === Animated array e2e tests ===
+
+///|
+/// Animated bubble sort produces HTML with controls, SVG, and Compare steps.
+test "animated bubble sort produces html with controls and compare" {
+  let html = @lib.render("array @animate { [3, 1, 4] sort: bubble }")
+  assert_true(html.contains("moonmaid-animated"))
+  assert_true(html.contains("moonmaid-controls"))
+  assert_true(html.contains("<svg"))
+  assert_true(html.contains("Compare"))
+}
+
+///|
+/// Animated insertion sort produces HTML with Insert steps.
+test "animated insertion sort produces html with insert steps" {
+  let html = @lib.render("array @animate { [3, 1, 2] sort: insertion }")
+  assert_true(html.contains("moonmaid-animated"))
+  assert_true(html.contains("Insert"))
+}
+
+///|
+/// Animated selection sort produces HTML with animation.
+test "animated selection sort produces html" {
+  let html = @lib.render("array @animate { [5, 3, 1] sort: selection }")
+  assert_true(html.contains("moonmaid-animated"))
+}
+
+///|
+/// Animated quick sort produces HTML with pivot references.
+test "animated quick sort produces html with pivot" {
+  let html = @lib.render("array @animate { [3, 1, 4, 1, 5] sort: quick }")
+  assert_true(html.contains("moonmaid-animated"))
+  assert_true(html.contains("pivot") || html.contains("Pivot"))
+}
+
+///|
+/// Static array unchanged — no animation wrapper.
+test "static array has no animation wrapper" {
+  let svg = @lib.render("array { [1, 2, 3] }")
+  assert_false(svg.contains("moonmaid-animated"))
+}
+
+///|
+/// Empty animated array handles gracefully.
+test "empty animated array handles gracefully" {
+  let html = @lib.render("array @animate { [] sort: bubble }")
+  assert_true(html.contains("moonmaid-animated"))
+  assert_true(html.contains("<svg"))
+}
+
+///|
+/// Single element animated array handles gracefully.
+test "single element animated array handles gracefully" {
+  let html = @lib.render("array @animate { [42] sort: bubble }")
+  assert_true(html.contains("moonmaid-animated"))
+  assert_true(html.contains("<svg"))
+}

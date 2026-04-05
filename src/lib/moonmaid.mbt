@@ -36,7 +36,14 @@ fn render_result(input : String) -> String raise @types.MoonmaidError {
       let timeline = @animation.generate_bst_animation(def, config)
       @renderer.render_animated(graph, timeline)
     }
-    AnimatedArrayDiagram(_def) =>
-      "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"40\"><text x=\"10\" y=\"25\" fill=\"#cf222e\" font-size=\"14\">Array animation not yet connected</text></svg>"
+    AnimatedArrayDiagram(def) => {
+      let array_def : @types.ArrayDef = {
+        elements: def.elements,
+        highlights: [],
+      }
+      let graph = @grid.layout(array_def, config)
+      let timeline = @animation.generate_sort_animation(def, config)
+      @renderer.render_animated(graph, timeline)
+    }
   }
 }
