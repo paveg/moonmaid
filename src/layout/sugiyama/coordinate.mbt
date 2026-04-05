@@ -77,12 +77,14 @@ pub fn assign_coordinates(
     let label = edge_labels.get(edge_key).unwrap_or("")
     match (node_pos.get(from), node_pos.get(to)) {
       (Some((fx, fy, fw, fh)), Some((tx, ty, tw, _th))) => {
+        // Offset endpoint by marker size so arrow doesn't overlap node
+        let arrow_offset = 8.0
         let points : Array[(Double, Double)] = if transpose {
           // LR: right-center of source to left-center of target
-          [(fx + fw, fy + fh / 2.0), (tx, ty + fh / 2.0)]
+          [(fx + fw, fy + fh / 2.0), (tx - arrow_offset, ty + fh / 2.0)]
         } else {
           // TD: bottom-center of source to top-center of target
-          [(fx + fw / 2.0, fy + fh), (tx + tw / 2.0, ty)]
+          [(fx + fw / 2.0, fy + fh), (tx + tw / 2.0, ty - arrow_offset)]
         }
         positioned_edges.push({ from_id: from, to_id: to, points, label })
       }

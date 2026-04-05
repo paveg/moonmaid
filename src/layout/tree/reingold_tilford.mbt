@@ -190,7 +190,7 @@ fn collect_nodes(
       edges.push({
         from_id: "node_\{node.value}",
         to_id: "node_\{left.value}",
-        points: [(parent_cx, parent_bottom), (child_cx, child_py)],
+        points: [(parent_cx, parent_bottom), (child_cx, child_py - 8.0)],
         label: "",
       })
     }
@@ -209,7 +209,7 @@ fn collect_nodes(
       edges.push({
         from_id: "node_\{node.value}",
         to_id: "node_\{right.value}",
-        points: [(parent_cx, parent_bottom), (child_cx, child_py)],
+        points: [(parent_cx, parent_bottom), (child_cx, child_py - 8.0)],
         label: "",
       })
     }
