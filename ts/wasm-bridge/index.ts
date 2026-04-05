@@ -1,16 +1,10 @@
 /**
  * WASM bridge for the moonmaid MoonBit module.
  *
- * MoonBit wasm-gc target exports functions that operate on WASM-GC strings
- * (externref / stringref). The JS host must supply a `moonbit:ffi` import
- * object so the module can call back into JS for I/O, and we use the
- * `spectest` / `moonbit` import pattern that the MoonBit toolchain expects.
- *
- * Strings cross the boundary via JS string imports (stringref proposal) when
- * compiled with `--enable-gc`. Since the stringref proposal is not yet
- * universally supported, MoonBit falls back to passing strings as opaque
- * JS values through `externref` when calling the exported render function
- * directly from JS.
+ * MoonBit wasm-gc target with `use-js-builtin-string: true` uses the
+ * JS String Builtins proposal (Chrome 131+, Node.js 22+) for zero-copy
+ * string passing between JS and WASM. The module is compiled and
+ * instantiated with `compileStreaming` builtins option.
  */
 
 export interface MoonmaidInstance {
@@ -52,27 +46,21 @@ async function fetchWasm(wasmPath: string): Promise<ArrayBuffer> {
 }
 
 /**
- * Instantiates the MoonBit wasm-gc module and wraps the exported `render`
- * function in a typed JS interface.
+ * Instantiates the MoonBit wasm-gc module with JS String Builtins enabled.
  *
- * MoonBit wasm-gc modules require a minimal import object. The `moonbit:ffi`
- * namespace provides host functions that the runtime calls for things like
- * printing and panicking. We supply no-op stubs for the functions we don't
- * need; the `render` function only needs `abort` in the error path.
+ * The `compileStreaming` / `compile` call uses the `builtins: ["js-string"]`
+ * option so the engine maps WASM string operations to native JS strings.
+ * This requires Node.js 22+ or Chrome 131+.
  */
 async function instantiate(wasmPath: string): Promise<MoonmaidInstance> {
   const bytes = await fetchWasm(wasmPath)
 
-  // MoonBit wasm-gc import requirements:
-  //   spectest.print_char  – used by println!/eprintln!
-  //   moonbit:ffi.abort    – used by panic
+  // MoonBit wasm-gc import requirements
   const importObject: WebAssembly.Imports = {
     spectest: {
-      print_char: (_c: number) => { /* no-op: suppress stdout */ },
+      print_char: (_c: number) => { /* no-op */ },
     },
     'moonbit:ffi': {
-      // Called when a MoonBit panic occurs.
-      // message is a WASM externref (opaque JS value wrapping the string).
       abort: (message: unknown, _file: unknown, _line: number, _column: number) => {
         const msg = typeof message === 'string' ? message : String(message)
         throw new Error(`MoonBit panic: ${msg}`)
@@ -80,17 +68,24 @@ async function instantiate(wasmPath: string): Promise<MoonmaidInstance> {
     },
   }
 
-  const { instance } = await WebAssembly.instantiate(bytes, importObject)
+  // Compile with JS String Builtins enabled
+  const compileOptions = {
+    builtins: ['js-string'],
+    importedStringConstants: '_',
+  } as WebAssembly.CompileOptions
+
+  const module = await WebAssembly.compile(bytes, compileOptions)
+  const instance = await WebAssembly.instantiate(module, importObject)
   const exports = instance.exports as Record<string, unknown>
 
   if (typeof exports['render'] !== 'function') {
     throw new Error(
       'WASM module does not export a "render" function. ' +
-      'Make sure the module was built with: moon build --target wasm-gc --release',
+      'Build with: moon build --target wasm-gc --release',
     )
   }
 
-  const wasmRender = exports['render'] as (input: unknown) => unknown
+  const wasmRender = exports['render'] as (input: string) => string
 
   return {
     render(input: string): string {

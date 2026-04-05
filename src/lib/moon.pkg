@@ -8,5 +8,7 @@ import {
 }
 
 options(
-  link: { "wasm-gc": { "exports": [ "render" ] } },
+  link: {
+    "wasm-gc": { "exports": [ "render" ], "use-js-builtin-string": true },
+  },
 )
