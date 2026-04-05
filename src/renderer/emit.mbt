@@ -107,7 +107,7 @@ pub fn emit(node : SvgNode) -> String {
       buf.write_string("<marker id=\"")
       buf.write_string(escape_xml(id))
       buf.write_string(
-        "\" viewBox=\"0 0 8 8\" markerWidth=\"8\" markerHeight=\"8\" refX=\"7\" refY=\"4\" orient=\"auto\">",
+        "\" viewBox=\"0 0 8 8\" markerWidth=\"6\" markerHeight=\"6\" refX=\"8\" refY=\"4\" orient=\"auto\">",
       )
       emit_children(buf, children)
       buf.write_string("</marker>")

@@ -24,12 +24,12 @@ pub fn render_tree(graph : @types.PositionedGraph) -> SvgNode {
     ),
   )
 
-  // Arrow marker — soft open chevron
+  // Arrow marker — small filled triangle
   let arrow_path = Path(
-    d="M 1 1 L 7 4 L 1 7",
-    fill="none",
-    stroke=edge_color,
-    stroke_width=1.5,
+    d="M 0 0 L 8 4 L 0 8 Z",
+    fill=edge_color,
+    stroke="none",
+    stroke_width=0.0,
     marker_end="",
     dash_array="",
   )
