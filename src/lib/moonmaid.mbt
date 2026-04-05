@@ -25,7 +25,7 @@ fn render_result(input : String) -> String raise @types.MoonmaidError {
       let graph = @grid.layout(def, config)
       @renderer.render_array(graph, def)
     }
-    TreeDiagram(def) => {
+    TreeDiagram(def) | AnimatedTreeDiagram(def) => {
       let graph = @tree.layout(def, config)
       @renderer.render_tree(graph)
     }

@@ -3,6 +3,7 @@
 pub(all) enum Diagram {
   ArrayDiagram(ArrayDef)
   TreeDiagram(TreeDef)
+  AnimatedTreeDiagram(TreeDef)
 } derive(Show, Eq)
 
 ///|
@@ -147,3 +148,38 @@ pub fn compute_bounds(
     height: max_y - min_y + padding * 2.0,
   }
 }
+
+///|
+/// An atomic action applied during one animation step.
+pub(all) enum AnimationAction {
+  Highlight(node_id~ : String, color~ : String)
+  Unhighlight(node_id~ : String)
+  TraverseEdge(from~ : String, to~ : String, color~ : String)
+  AddNode(
+    node_id~ : String,
+    x~ : Double,
+    y~ : Double,
+    width~ : Double,
+    height~ : Double,
+    label~ : String
+  )
+  RemoveNode(node_id~ : String)
+  SwapNodes(a~ : String, b~ : String)
+  UpdateLabel(node_id~ : String, text~ : String)
+  CompareNodes(a~ : String, b~ : String)
+  Annotate(text~ : String, x~ : Double, y~ : Double)
+} derive(Show, Eq)
+
+///|
+/// A single step in an animation: one or more actions with metadata.
+pub(all) struct AnimationStep {
+  actions : Array[AnimationAction]
+  description : String
+  duration_ms : Int
+} derive(Show, Eq)
+
+///|
+/// An ordered sequence of animation steps.
+pub(all) struct AnimationTimeline {
+  steps : Array[AnimationStep]
+} derive(Show, Eq)
