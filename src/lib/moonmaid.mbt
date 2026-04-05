@@ -45,7 +45,9 @@ fn render_result(input : String) -> String raise @types.MoonmaidError {
       let timeline = @animation.generate_sort_animation(def, config)
       @renderer.render_animated(graph, timeline)
     }
-    GraphDiagram(_) =>
-      raise @types.MoonmaidError::of("Graph rendering not yet connected")
+    GraphDiagram(def) => {
+      let graph = @sugiyama.layout(def, config)
+      @renderer.emit(@renderer.render_graph(graph, def))
+    }
   }
 }

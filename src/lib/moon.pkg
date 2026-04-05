@@ -3,6 +3,7 @@ import {
   "paveg/moonmaid/parser",
   "paveg/moonmaid/layout/grid" @grid,
   "paveg/moonmaid/layout/tree" @tree,
+  "paveg/moonmaid/layout/sugiyama" @sugiyama,
   "paveg/moonmaid/renderer",
   "paveg/moonmaid/animation",
 }

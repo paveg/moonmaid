@@ -309,3 +309,85 @@ test "single element animated array handles gracefully" {
   assert_true(html.contains("moonmaid-animated"))
   assert_true(html.contains("<svg"))
 }
+
+// === Graph/Flowchart e2e tests ===
+
+///|
+/// Graph e2e 1: Directed graph with A -> B -> C renders SVG with labels and polylines.
+test "graph directed A B C renders svg with labels and polylines" {
+  let svg = @lib.render("graph directed { A -> B  B -> C }")
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains(">A<"))
+  assert_true(svg.contains(">B<"))
+  assert_true(svg.contains(">C<"))
+  assert_true(svg.contains("<polyline"))
+}
+
+///|
+/// Graph e2e 2: Labeled nodes render custom labels.
+test "graph directed labeled nodes render custom labels" {
+  let svg = @lib.render("graph directed { A(\"Start\") -> B(\"End\") }")
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains("Start"))
+  assert_true(svg.contains("End"))
+}
+
+///|
+/// Graph e2e 3: Edge weight renders as label text.
+test "graph directed edge weight renders label" {
+  let svg = @lib.render("graph directed { A -> B [weight=5] }")
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains(">5<"))
+}
+
+///|
+/// Graph e2e 4: Undirected graph returns error SVG.
+test "graph undirected returns error svg" {
+  let svg = @lib.render("graph undirected { A -> B }")
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains("#991b1b"))
+}
+
+///|
+/// Graph e2e 5: Empty directed graph renders valid SVG.
+test "graph directed empty renders valid svg" {
+  let svg = @lib.render("graph directed { }")
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains("</svg>"))
+}
+
+///|
+/// Graph e2e 6: Flowchart TD with rect and diamond nodes.
+test "flowchart TD with rect and diamond renders svg" {
+  let svg = @lib.render("flowchart TD { A[\"Process\"] -> B{\"Decision?\"} }")
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains("Process"))
+  assert_true(svg.contains("Decision?") || svg.contains("Decision"))
+  assert_true(svg.contains("<polygon"))
+}
+
+///|
+/// Graph e2e 7: Flowchart LR renders valid SVG.
+test "flowchart LR renders valid svg" {
+  let svg = @lib.render("flowchart LR { A -> B -> C }")
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains("</svg>"))
+}
+
+///|
+/// Graph e2e 8: Flowchart edge labels render in SVG.
+test "flowchart TD edge labels render yes and no" {
+  let svg = @lib.render("flowchart TD { A ->|Yes| B  A ->|No| C }")
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains("Yes"))
+  assert_true(svg.contains("No"))
+}
+
+///|
+/// Graph e2e 9: Cyclic graph renders without error.
+test "graph directed cyclic renders without error" {
+  let svg = @lib.render("graph directed { A -> B  B -> C  C -> A }")
+  assert_true(svg.contains("<svg"))
+  assert_true(svg.contains("</svg>"))
+  assert_false(svg.contains("#991b1b"))
+}
