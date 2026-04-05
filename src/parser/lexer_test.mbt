@@ -223,6 +223,54 @@ test "lex all sort algorithm keywords" {
 }
 
 ///|
+test "lex graph directed" {
+  let input = "graph directed { A -> B }"
+  let tokens = @parser.lex(input)
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [
+    @parser.Token::TkGraph,
+    @parser.Token::TkDirected,
+    @parser.Token::LBrace,
+    @parser.Token::Ident("A"),
+    @parser.Token::Arrow,
+    @parser.Token::Ident("B"),
+    @parser.Token::RBrace,
+    @parser.Token::Eof,
+  ])
+}
+
+///|
+test "lex flowchart TD" {
+  let input = "flowchart TD { A -> B }"
+  let tokens = @parser.lex(input)
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [
+    @parser.Token::TkFlowchart,
+    @parser.Token::Ident("TD"),
+    @parser.Token::LBrace,
+    @parser.Token::Ident("A"),
+    @parser.Token::Arrow,
+    @parser.Token::Ident("B"),
+    @parser.Token::RBrace,
+    @parser.Token::Eof,
+  ])
+}
+
+///|
+test "lex arrow pipe label pipe" {
+  let input = "->|Yes|"
+  let tokens = @parser.lex(input)
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [
+    @parser.Token::Arrow,
+    @parser.Token::Pipe,
+    @parser.Token::Ident("Yes"),
+    @parser.Token::Pipe,
+    @parser.Token::Eof,
+  ])
+}
+
+///|
 /// Boundary: very large integer raises error.
 test "lex very large integer raises error" {
   let result : Result[Array[@parser.Located], Unit] = Ok(

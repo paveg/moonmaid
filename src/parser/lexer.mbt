@@ -108,6 +108,10 @@ fn keyword_token(s : String) -> Token? {
     "insertion" => Some(TkInsertion)
     "selection" => Some(TkSelection)
     "quick" => Some(TkQuick)
+    "graph" => Some(TkGraph)
+    "directed" => Some(TkDirected)
+    "undirected" => Some(TkUndirected)
+    "flowchart" => Some(TkFlowchart)
     _ => None
   }
 }
@@ -206,6 +210,10 @@ fn Lexer::next_token(self : Lexer) -> Located raise @types.MoonmaidError {
     Some('=') => {
       self.advance()
       Eq
+    }
+    Some('|') => {
+      self.advance()
+      Pipe
     }
     Some('.') => {
       self.advance()

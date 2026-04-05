@@ -13,6 +13,10 @@ pub(all) enum Token {
   TkInsertion
   TkSelection
   TkQuick
+  TkGraph
+  TkDirected
+  TkUndirected
+  TkFlowchart
   // Literals
   IntLit(Int)
   StringLit(String)
@@ -30,6 +34,7 @@ pub(all) enum Token {
   Eq // =
   Arrow // ->
   Colon // :
+  Pipe // |
   // Special
   Eof
 } derive(Show, Eq)
