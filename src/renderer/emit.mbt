@@ -79,7 +79,7 @@ pub fn emit(node : SvgNode) -> String {
         buf.write_string(escape_xml(filter))
         buf.write_string(")\"")
       }
-      buf.write_string("\"/>")
+      buf.write_string("/>")
     }
     Text(x~, y~, content~, font_size~, fill~, anchor~, font_family~) => {
       buf.write_string("<text x=\"")
