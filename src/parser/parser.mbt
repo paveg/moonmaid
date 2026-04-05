@@ -147,6 +147,41 @@ fn Parser::parse_array_body(
 }
 
 ///|
+/// Parse animated array body: { [int, ...] sort: <algo> }
+fn Parser::parse_array_anim_body(
+  self : Parser,
+  limits : @types.Limits,
+) -> @types.ArrayAnimDef raise @types.MoonmaidError {
+  self.expect(LBrace)
+  self.expect(LBracket)
+  let elements = self.parse_int_list(RBracket)
+  self.expect(RBracket)
+  if elements.length() > limits.max_array_size {
+    raise @types.MoonmaidError::of(
+      "array size \{elements.length()} exceeds limit \{limits.max_array_size}",
+    )
+  }
+  // Expect: sort: <algorithm>
+  match self.advance() {
+    TkSort => ()
+    tok =>
+      raise @types.MoonmaidError::of(
+        "expected 'sort' keyword in animated array, got \{tok}",
+      )
+  }
+  self.expect(Colon)
+  let algorithm = match self.advance() {
+    TkBubble => @types.SortAlgorithm::Bubble
+    TkInsertion => @types.SortAlgorithm::Insertion
+    TkSelection => @types.SortAlgorithm::Selection
+    TkQuick => @types.SortAlgorithm::Quick
+    tok => raise @types.MoonmaidError::of("unknown sort algorithm: \{tok}")
+  }
+  self.expect(RBrace)
+  { elements, algorithm }
+}
+
+///|
 /// Parse a diagram with explicit resource limits.
 pub fn parse_with_limits(
   input : String,
@@ -155,17 +190,23 @@ pub fn parse_with_limits(
   let tokens = lex(input)
   let parser = Parser::new(tokens)
   let diagram = match parser.advance() {
-    TkArray => {
+    TkArray =>
       if parser.peek() == At {
         let _ = parser.advance() // consume @
-        let directive = parser.advance()
-        raise @types.MoonmaidError::of(
-          "array does not support @\{directive} directive",
-        )
+        match parser.advance() {
+          TkAnimate => {
+            let def = parser.parse_array_anim_body(limits)
+            @types.Diagram::AnimatedArrayDiagram(def)
+          }
+          tok =>
+            raise @types.MoonmaidError::of(
+              "array does not support @\{tok} directive",
+            )
+        }
+      } else {
+        let def = parser.parse_array_body(limits)
+        @types.Diagram::ArrayDiagram(def)
       }
-      let def = parser.parse_array_body(limits)
-      @types.Diagram::ArrayDiagram(def)
-    }
     TkTree => {
       // Consume the tree kind (e.g. bst) before checking for directives
       let kind = match parser.advance() {

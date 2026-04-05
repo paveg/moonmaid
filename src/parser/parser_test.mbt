@@ -161,13 +161,92 @@ test "parse tree bst without @animate produces TreeDiagram" {
 }
 
 ///|
-test "parse array @animate raises error" {
+test "parse array @animate bubble" {
+  let result = @parser.parse("array @animate { [3, 1, 4] sort: bubble }")
+  assert_eq(
+    result,
+    @types.Diagram::AnimatedArrayDiagram({
+      elements: [3, 1, 4],
+      algorithm: @types.SortAlgorithm::Bubble,
+    }),
+  )
+}
+
+///|
+test "parse array @animate all sort algorithms" {
+  let bubble = @parser.parse("array @animate { [1, 2] sort: bubble }")
+  assert_eq(
+    bubble,
+    @types.Diagram::AnimatedArrayDiagram({
+      elements: [1, 2],
+      algorithm: @types.SortAlgorithm::Bubble,
+    }),
+  )
+  let insertion = @parser.parse("array @animate { [1, 2] sort: insertion }")
+  assert_eq(
+    insertion,
+    @types.Diagram::AnimatedArrayDiagram({
+      elements: [1, 2],
+      algorithm: @types.SortAlgorithm::Insertion,
+    }),
+  )
+  let selection = @parser.parse("array @animate { [1, 2] sort: selection }")
+  assert_eq(
+    selection,
+    @types.Diagram::AnimatedArrayDiagram({
+      elements: [1, 2],
+      algorithm: @types.SortAlgorithm::Selection,
+    }),
+  )
+  let quick = @parser.parse("array @animate { [1, 2] sort: quick }")
+  assert_eq(
+    quick,
+    @types.Diagram::AnimatedArrayDiagram({
+      elements: [1, 2],
+      algorithm: @types.SortAlgorithm::Quick,
+    }),
+  )
+}
+
+///|
+test "parse array @animate missing sort raises error" {
   let result : Result[@types.Diagram, Unit] = Ok(
-    @parser.parse("array @animate { [1] }"),
+    @parser.parse("array @animate { [1, 2] }"),
   ) catch {
     _ => Err(())
   }
   assert_eq(result, Err(()))
+}
+
+///|
+test "parse array @animate unknown algorithm raises error" {
+  let result : Result[@types.Diagram, Unit] = Ok(
+    @parser.parse("array @animate { [1, 2] sort: merge }"),
+  ) catch {
+    _ => Err(())
+  }
+  assert_eq(result, Err(()))
+}
+
+///|
+test "parse static array unchanged" {
+  let result = @parser.parse("array { [3, 1, 4] }")
+  assert_eq(
+    result,
+    @types.Diagram::ArrayDiagram({ elements: [3, 1, 4], highlights: [] }),
+  )
+}
+
+///|
+test "parse array @animate empty elements" {
+  let result = @parser.parse("array @animate { [] sort: bubble }")
+  assert_eq(
+    result,
+    @types.Diagram::AnimatedArrayDiagram({
+      elements: [],
+      algorithm: @types.SortAlgorithm::Bubble,
+    }),
+  )
 }
 
 ///|
