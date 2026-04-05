@@ -43,3 +43,62 @@ test "lex error on invalid character" {
   }
   assert_eq(result, Err(()))
 }
+
+test "lex empty input" {
+  let tokens = @parser.lex("")
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [@parser.Token::Eof])
+}
+
+test "lex whitespace only" {
+  let tokens = @parser.lex("  \n\t  ")
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [@parser.Token::Eof])
+}
+
+test "lex string escape sequences" {
+  let tokens = @parser.lex("\"hello\\nworld\"")
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [@parser.Token::StringLit("hello\nworld"), @parser.Token::Eof])
+}
+
+test "lex unterminated string raises error" {
+  let result : Result[Array[@parser.Located], Unit] = try {
+    Ok(@parser.lex("\"hello"))
+  } catch {
+    _ => Err(())
+  }
+  assert_eq(result, Err(()))
+}
+
+test "lex single dot raises error" {
+  let result : Result[Array[@parser.Located], Unit] = try {
+    Ok(@parser.lex("."))
+  } catch {
+    _ => Err(())
+  }
+  assert_eq(result, Err(()))
+}
+
+test "lex arrow incomplete raises error" {
+  let result : Result[Array[@parser.Located], Unit] = try {
+    Ok(@parser.lex("-"))
+  } catch {
+    _ => Err(())
+  }
+  assert_eq(result, Err(()))
+}
+
+test "lex integer zero" {
+  let tokens = @parser.lex("0")
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [@parser.Token::IntLit(0), @parser.Token::Eof])
+}
+
+test "lex adjacent tokens without whitespace" {
+  let tokens = @parser.lex("(3)")
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [
+    @parser.Token::LParen, @parser.Token::IntLit(3), @parser.Token::RParen, @parser.Token::Eof,
+  ])
+}
