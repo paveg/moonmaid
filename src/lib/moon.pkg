@@ -4,6 +4,7 @@ import {
   "paveg/moonmaid/layout/grid" @grid,
   "paveg/moonmaid/layout/tree" @tree,
   "paveg/moonmaid/renderer",
+  "paveg/moonmaid/animation",
 }
 
 options(

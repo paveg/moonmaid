@@ -20,15 +20,19 @@ pub fn render(input : String) -> String {
 fn render_result(input : String) -> String raise @types.MoonmaidError {
   let diagram = @parser.parse(input)
   let config = @types.LayoutConfig::default()
-  let svg_tree = match diagram {
+  match diagram {
     ArrayDiagram(def) => {
       let graph = @grid.layout(def, config)
-      @renderer.render_array(graph, def)
+      @renderer.emit(@renderer.render_array(graph, def))
     }
-    TreeDiagram(def) | AnimatedTreeDiagram(def) => {
+    TreeDiagram(def) => {
       let graph = @tree.layout(def, config)
-      @renderer.render_tree(graph)
+      @renderer.emit(@renderer.render_tree(graph))
+    }
+    AnimatedTreeDiagram(def) => {
+      let graph = @tree.layout(def, config)
+      let timeline = @animation.generate_bst_animation(def, config)
+      @renderer.render_animated(graph, timeline)
     }
   }
-  @renderer.emit(svg_tree)
 }

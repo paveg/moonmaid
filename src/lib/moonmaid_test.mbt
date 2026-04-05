@@ -143,3 +143,44 @@ test "xss in highlight label is not reflected in svg output" {
   // Raw XSS string must not appear verbatim
   assert_false(svg.contains(xss))
 }
+
+///|
+/// Test 12: Animated tree produces HTML with controls and SVG.
+test "animated tree produces html with controls and svg" {
+  let html = @lib.render("tree bst @animate { insert(5, 3, 7) }")
+  assert_true(html.contains("moonmaid-animated"))
+  assert_true(html.contains("moonmaid-controls"))
+  assert_true(html.contains("<svg"))
+}
+
+///|
+/// Test 13: Animated tree contains step descriptions.
+test "animated tree contains step descriptions" {
+  let html = @lib.render("tree bst @animate { insert(5, 3, 7) }")
+  assert_true(html.contains("Insert 5"))
+  assert_true(html.contains("Compare"))
+}
+
+///|
+/// Test 14: Static tree does NOT contain animation controls.
+test "static tree does not contain animation controls" {
+  let svg = @lib.render("tree bst { insert(5, 3) }")
+  assert_false(svg.contains("moonmaid-controls"))
+}
+
+///|
+/// Test 15: Single animated node renders without crash.
+test "animated single node renders" {
+  let html = @lib.render("tree bst @animate { insert(5) }")
+  assert_true(html.contains("moonmaid-animated"))
+  assert_true(html.contains("<svg"))
+  assert_true(html.contains("Insert 5"))
+}
+
+///|
+/// Test 16: Animated empty tree handles gracefully.
+test "animated empty tree handles gracefully" {
+  let html = @lib.render("tree bst @animate { insert() }")
+  assert_true(html.contains("moonmaid-animated"))
+  assert_true(html.contains("<svg"))
+}
