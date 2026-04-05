@@ -341,11 +341,11 @@ test "graph directed edge weight renders label" {
 }
 
 ///|
-/// Graph e2e 4: Undirected graph returns error SVG.
-test "graph undirected returns error svg" {
+/// Graph e2e 4: Undirected graph renders valid SVG (Dagre handles undirected).
+test "graph undirected renders valid svg" {
   let svg = @lib.render("graph undirected { A -> B }")
   assert_true(svg.contains("<svg"))
-  assert_true(svg.contains("#991b1b"))
+  assert_true(svg.contains("</svg>"))
 }
 
 ///|

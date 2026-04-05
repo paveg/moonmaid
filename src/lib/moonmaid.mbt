@@ -46,7 +46,7 @@ fn render_result(input : String) -> String raise @types.MoonmaidError {
       @renderer.render_animated(graph, timeline)
     }
     GraphDiagram(def) => {
-      let graph = @sugiyama.layout(def, config)
+      let graph = @dagre.layout_with_dagre(def, config)
       @renderer.emit(@renderer.render_graph(graph, def))
     }
   }
