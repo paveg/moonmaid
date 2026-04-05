@@ -7,10 +7,12 @@ pub(all) enum Token {
   TkBST
   TkInsert
   TkHighlight
+  TkAnimate
   // Literals
   IntLit(Int)
   StringLit(String)
   Ident(String)
+  At // @
   // Symbols
   LBrace // {
   RBrace // }

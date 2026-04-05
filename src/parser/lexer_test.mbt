@@ -140,3 +140,30 @@ test "lex adjacent tokens without whitespace" {
     @parser.Token::Eof,
   ])
 }
+
+///|
+test "lex tree bst @animate diagram" {
+  let input = "tree bst @animate { insert(5) }"
+  let tokens = @parser.lex(input)
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [
+    @parser.Token::TkTree,
+    @parser.Token::TkBST,
+    @parser.Token::At,
+    @parser.Token::TkAnimate,
+    @parser.Token::LBrace,
+    @parser.Token::TkInsert,
+    @parser.Token::LParen,
+    @parser.Token::IntLit(5),
+    @parser.Token::RParen,
+    @parser.Token::RBrace,
+    @parser.Token::Eof,
+  ])
+}
+
+///|
+test "lex @ alone produces At and Eof" {
+  let tokens = @parser.lex("@")
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [@parser.Token::At, @parser.Token::Eof])
+}

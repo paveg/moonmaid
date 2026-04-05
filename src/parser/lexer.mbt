@@ -89,6 +89,7 @@ fn keyword_token(s : String) -> Token? {
     "bst" => Some(TkBST)
     "insert" => Some(TkInsert)
     "highlight" => Some(TkHighlight)
+    "animate" => Some(TkAnimate)
     _ => None
   }
 }
@@ -171,6 +172,10 @@ fn Lexer::next_token(self : Lexer) -> Located raise @types.MoonmaidError {
     Some(')') => {
       self.advance()
       RParen
+    }
+    Some('@') => {
+      self.advance()
+      At
     }
     Some(',') => {
       self.advance()
