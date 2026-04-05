@@ -8,7 +8,7 @@ pub fn render(input : String) -> String {
   match result {
     Ok(svg) => svg
     Err(msg) =>
-      "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"40\"><text x=\"10\" y=\"25\" fill=\"#cf222e\" font-size=\"14\">" +
+      "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"40\"><text x=\"10\" y=\"25\" fill=\"#991b1b\" font-size=\"14\">" +
       @renderer.escape_xml(msg) +
       "</text></svg>"
   }

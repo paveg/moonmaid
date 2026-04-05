@@ -1,9 +1,9 @@
 ///|
 /// Cell dimensions for array elements.
-let cell_width : Double = 40.0
+let cell_width : Double = 52.0
 
 ///|
-let cell_height : Double = 40.0
+let cell_height : Double = 52.0
 
 ///|
 /// Gap between element cell bottom and index label top.

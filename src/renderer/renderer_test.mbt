@@ -98,9 +98,9 @@ test "valid hex colors accepted" {
 }
 
 ///|
-/// Test 7: Invalid hex colors fall back to the default fill (#f6f8fa).
+/// Test 7: Invalid hex colors fall back to the default fill (#ffffff).
 test "invalid hex colors rejected" {
-  let fallback = "#f6f8fa"
+  let fallback = "#ffffff"
   // #xyz is not valid hex
   assert_eq(resolve_highlight_color("#xyz"), fallback)
   // XSS injection attempt

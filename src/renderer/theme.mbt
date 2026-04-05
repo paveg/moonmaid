@@ -1,42 +1,43 @@
 ///|
-/// GFM light mode color palette.
-let bg : String = "#ffffff"
+/// Eraser.io-inspired modern clean color palette with Tailwind pastel colors.
+let bg : String = "#fafbfc"
 
 ///|
-let node_fill : String = "#f6f8fa"
+let node_fill : String = "#ffffff"
 
 ///|
-let node_stroke : String = "#d1d9e0"
+let node_stroke : String = "#e2e8f0"
 
 ///|
-let text_color : String = "#1f2328"
+let text_color : String = "#334155"
 
 ///|
-let edge_color : String = "#656d76"
+let edge_color : String = "#cbd5e1"
 
 ///|
-let highlight_blue : String = "#0969da"
+let index_color : String = "#94a3b8"
 
 ///|
-let highlight_purple : String = "#8250df"
-
-///|
-let highlight_yellow : String = "#bf8700"
-
-///|
-let highlight_red : String = "#cf222e"
-
-///|
-let highlight_green : String = "#1a7f37"
-
-///|
-let index_color : String = "#656d76"
-
-///|
-let font_family : String = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif"
+let font_family : String = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
 
 ///|
 let font_mono : String = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace"
+
+///|
+/// SVG filter id for the drop shadow applied to node rectangles.
+let shadow_filter_id : String = "shadow"
+
+///|
+/// SVG filter definition for the drop shadow.
+let shadow_filter_def : String = "<filter id=\"shadow\" x=\"-10%\" y=\"-10%\" width=\"130%\" height=\"140%\"><feDropShadow dx=\"0\" dy=\"2\" stdDeviation=\"3\" flood-color=\"#000000\" flood-opacity=\"0.08\"/></filter>"
+
+///|
+/// A highlight style comprising fill, stroke, and text color.
+pub(all) struct HighlightStyle {
+  fill : String
+  stroke : String
+  text_color : String
+} derive(Show, Eq)
 
 ///|
 /// Validate that a string is a well-formed hex color (#RGB, #RGBA, #RRGGBB, or #RRGGBBAA).
@@ -62,16 +63,26 @@ fn is_valid_hex_color(s : String) -> Bool {
 }
 
 ///|
-/// Resolve a highlight color name to the GFM palette value.
-/// Returns the edge_color as default for unknown names.
-/// Custom hex colors are validated to prevent injection.
-pub fn resolve_highlight_color(color : String) -> String {
+/// Resolve a highlight color name to a HighlightStyle with fill, stroke, and text color.
+pub fn resolve_highlight_style(color : String) -> HighlightStyle {
   match color {
-    "blue" => highlight_blue
-    "purple" => highlight_purple
-    "yellow" => highlight_yellow
-    "red" => highlight_red
-    "green" => highlight_green
-    _ => if is_valid_hex_color(color) { color } else { node_fill }
+    "blue" => { fill: "#dbeafe", stroke: "#93c5fd", text_color: "#1e40af" }
+    "green" => { fill: "#dcfce7", stroke: "#86efac", text_color: "#166534" }
+    "yellow" => { fill: "#fef9c3", stroke: "#fde047", text_color: "#854d0e" }
+    "red" => { fill: "#fee2e2", stroke: "#fca5a5", text_color: "#991b1b" }
+    "purple" => { fill: "#ede9fe", stroke: "#c4b5fd", text_color: "#5b21b6" }
+    _ =>
+      if is_valid_hex_color(color) {
+        { fill: color, stroke: color, text_color: "#ffffff" }
+      } else {
+        { fill: node_fill, stroke: node_stroke, text_color }
+      }
   }
+}
+
+///|
+/// Legacy wrapper: resolve a highlight color name to a single fill color.
+/// Used in tests that check for specific hex values.
+pub fn resolve_highlight_color(color : String) -> String {
+  resolve_highlight_style(color).fill
 }

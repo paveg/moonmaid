@@ -23,18 +23,18 @@ pub fn render_array(
       fill=bg,
       stroke="none",
       stroke_width=0.0,
+      filter="",
     ),
   )
 
-  // Build a lookup: index -> highlight color for that index
-  // An element index is highlighted if it falls within any Highlight range
+  // Build a lookup: index -> highlight style for that index
   let n = def.elements.length()
-  let highlight_colors : Array[String] = Array::make(n, "")
+  let highlight_styles : Array[HighlightStyle?] = Array::make(n, None)
   for h = 0; h < def.highlights.length(); h = h + 1 {
     let hi = def.highlights[h]
-    let resolved = resolve_highlight_color(hi.color)
+    let resolved = resolve_highlight_style(hi.color)
     for i = hi.start; i <= hi.end && i < n; i = i + 1 {
-      highlight_colors[i] = resolved
+      highlight_styles[i] = Some(resolved)
     }
   }
 
@@ -48,13 +48,33 @@ pub fn render_array(
       // Parse the element index from id "elem_N"
       let idx_str = node.id[5:].to_string()
       let elem_idx = parse_int(idx_str)
-      let fill = if elem_idx >= 0 &&
-        elem_idx < highlight_colors.length() &&
-        highlight_colors[elem_idx].length() > 0 {
-        highlight_colors[elem_idx]
+      let style : HighlightStyle? = if elem_idx >= 0 &&
+        elem_idx < highlight_styles.length() {
+        highlight_styles[elem_idx]
       } else {
-        node_fill
+        None
       }
+      let fill = match style {
+        Some(s) => s.fill
+        None => node_fill
+      }
+      let stroke = match style {
+        Some(s) => s.stroke
+        None => node_stroke
+      }
+      let label_color = match style {
+        Some(s) => s.text_color
+        None => text_color
+      }
+      let sw = match style {
+        Some(_) => 2.0
+        None => 1.0
+      }
+      let fw = match style {
+        Some(_) => 600.0
+        None => 500.0
+      }
+      let _ = fw
       // Cell rect
       children.push(
         Rect(
@@ -62,10 +82,11 @@ pub fn render_array(
           y=node.y,
           width=node.width,
           height=node.height,
-          rx=4.0,
+          rx=12.0,
           fill~,
-          stroke=node_stroke,
-          stroke_width=1.0,
+          stroke~,
+          stroke_width=sw,
+          filter=shadow_filter_id,
         ),
       )
       // Element value label centered in cell
@@ -76,8 +97,8 @@ pub fn render_array(
           x=cx,
           y=cy,
           content=node.label,
-          font_size=13.0,
-          fill=text_color,
+          font_size=16.0,
+          fill=label_color,
           anchor="middle",
           font_family=font_mono,
         ),

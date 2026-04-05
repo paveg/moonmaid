@@ -20,6 +20,7 @@ pub fn render_tree(graph : @types.PositionedGraph) -> SvgNode {
       fill=bg,
       stroke="none",
       stroke_width=0.0,
+      filter="",
     ),
   )
 
@@ -57,10 +58,11 @@ pub fn render_tree(graph : @types.PositionedGraph) -> SvgNode {
         y=node.y,
         width=node.width,
         height=node.height,
-        rx=6.0,
+        rx=14.0,
         fill=node_fill,
         stroke=node_stroke,
         stroke_width=1.5,
+        filter=shadow_filter_id,
       ),
     )
     let cx = node.x + node.width / 2.0
@@ -70,7 +72,7 @@ pub fn render_tree(graph : @types.PositionedGraph) -> SvgNode {
         x=cx,
         y=cy,
         content=node.label,
-        font_size=13.0,
+        font_size=16.0,
         fill=text_color,
         anchor="middle",
         font_family~,

@@ -101,10 +101,10 @@ pub fn Limits::default() -> Limits {
 }
 
 ///|
-pub let default_node_width : Double = 48.0
+pub let default_node_width : Double = 56.0
 
 ///|
-pub let default_node_height : Double = 32.0
+pub let default_node_height : Double = 40.0
 
 ///|
 /// Parse/render error.

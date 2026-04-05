@@ -37,8 +37,8 @@ test "render array with highlight contains highlight color" {
     #| }
   let svg = @lib.render(input)
   assert_true(svg.contains("<svg"))
-  // Highlight blue resolves to #0969da
-  assert_true(svg.contains("#0969da"))
+  // Highlight blue resolves to #dbeafe
+  assert_true(svg.contains("#dbeafe"))
 }
 
 ///|
@@ -47,7 +47,7 @@ test "render invalid input returns error svg" {
   let svg = @lib.render("invalid { }")
   assert_true(svg.contains("<svg"))
   assert_true(svg.contains("</svg>"))
-  assert_true(svg.contains("#cf222e"))
+  assert_true(svg.contains("#991b1b"))
 }
 
 ///|
@@ -107,7 +107,7 @@ test "render array at 256 element limit produces valid svg" {
   let svg = @lib.render(buf.to_string())
   assert_true(svg.contains("<svg"))
   assert_true(svg.contains("</svg>"))
-  assert_false(svg.contains("#cf222e"))
+  assert_false(svg.contains("#991b1b"))
 }
 
 ///|
@@ -124,7 +124,7 @@ test "render array over 256 element limit returns error svg" {
   buf.write_string("] }")
   let svg = @lib.render(buf.to_string())
   assert_true(svg.contains("<svg"))
-  assert_true(svg.contains("#cf222e"))
+  assert_true(svg.contains("#991b1b"))
 }
 
 ///|
@@ -195,7 +195,7 @@ test "render input too large returns error svg" {
   }
   let svg = @lib.render(buf.to_string())
   assert_true(svg.contains("<svg"))
-  assert_true(svg.contains("#cf222e"))
+  assert_true(svg.contains("#991b1b"))
   assert_true(svg.contains("Input too large"))
 }
 
@@ -204,7 +204,7 @@ test "render input too large returns error svg" {
 test "render invalid input returns useful error message" {
   let svg = @lib.render("invalid { }")
   assert_true(svg.contains("<svg"))
-  assert_true(svg.contains("#cf222e"))
+  assert_true(svg.contains("#991b1b"))
   // Should contain a meaningful message, not just "Parse or render error"
   assert_false(svg.contains("Parse or render error"))
 }
@@ -225,7 +225,7 @@ test "large input 100KB returns error svg gracefully" {
   }
   let svg = @lib.render(buf.to_string())
   assert_true(svg.contains("<svg"))
-  assert_true(svg.contains("#cf222e"))
+  assert_true(svg.contains("#991b1b"))
   assert_true(svg.contains("Input too large"))
 }
 
@@ -248,7 +248,7 @@ test "invalid hex color in highlight does not inject attributes" {
 test "overflow integer in array produces error svg" {
   let svg = @lib.render("array { [1000001] }")
   assert_true(svg.contains("<svg"))
-  assert_true(svg.contains("#cf222e"))
+  assert_true(svg.contains("#991b1b"))
   assert_true(svg.contains("too large"))
 }
 

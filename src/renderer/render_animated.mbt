@@ -23,7 +23,7 @@ pub fn render_animated(
 
   // Style block
   buf.write_string(
-    "<style>.moonmaid-animated{border:1px solid #d1d9e0;border-radius:8px;overflow:hidden}.mm-btn{background:none;border:1px solid #d1d9e0;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:14px;color:#656d76}.mm-btn:hover{background:#f6f8fa;color:#1f2328}.moonmaid-controls{display:flex;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid #d1d9e0;background:#f6f8fa}.moonmaid-description{padding:8px 12px;font-size:13px;color:#1f2328;min-height:24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif}</style>",
+    "<style>.moonmaid-animated{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}.mm-btn{background:none;border:1px solid #e2e8f0;border-radius:8px;padding:2px 8px;cursor:pointer;font-size:14px;color:#64748b}.mm-btn:hover{background:#f1f5f9;color:#334155}.mm-play{background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:2px 8px;cursor:pointer;font-size:14px}.mm-play:hover{background:#2563eb}.moonmaid-controls{display:flex;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid #e2e8f0;background:#ffffff}.moonmaid-description{padding:8px 12px;font-size:13px;color:#64748b;min-height:24px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.mm-step{font-size:12px;color:#94a3b8}.mm-progress{flex:1;height:4px;-webkit-appearance:none;appearance:none;background:#e2e8f0;border-radius:2px;outline:none}.mm-progress::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#3b82f6;cursor:pointer}.mm-progress::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#3b82f6;cursor:pointer;border:none}</style>",
   )
 
   // SVG with data-node-id and data-edge-id attributes
@@ -37,6 +37,17 @@ pub fn render_animated(
   buf.write_string(fmt_double(svg_height))
   buf.write_string("\">")
 
+  // Shadow filter defs
+  buf.write_string("<defs>")
+  buf.write_string(shadow_filter_def)
+
+  // Arrow marker definition
+  buf.write_string(
+    "<marker id=\"arrow\" markerWidth=\"10\" markerHeight=\"7\" refX=\"10\" refY=\"3.5\" orient=\"auto\"><path d=\"M 0 0 L 10 3.5 L 0 7 z\" fill=\"",
+  )
+  buf.write_string(escape_xml(edge_color))
+  buf.write_string("\" stroke=\"none\"/></marker></defs>")
+
   // Background rect
   buf.write_string("<rect x=\"0\" y=\"0\" width=\"")
   buf.write_string(fmt_double(svg_width))
@@ -45,13 +56,6 @@ pub fn render_animated(
   buf.write_string("\" rx=\"0\" fill=\"")
   buf.write_string(escape_xml(bg))
   buf.write_string("\" stroke=\"none\" stroke-width=\"0\"/>")
-
-  // Arrow marker definition
-  buf.write_string(
-    "<defs><marker id=\"arrow\" markerWidth=\"10\" markerHeight=\"7\" refX=\"10\" refY=\"3.5\" orient=\"auto\"><path d=\"M 0 0 L 10 3.5 L 0 7 z\" fill=\"",
-  )
-  buf.write_string(escape_xml(edge_color))
-  buf.write_string("\" stroke=\"none\"/></marker></defs>")
 
   // Edges with data-edge-id
   for i = 0; i < graph.edges.length(); i = i + 1 {
@@ -84,18 +88,20 @@ pub fn render_animated(
     buf.write_string(fmt_double(node.width))
     buf.write_string("\" height=\"")
     buf.write_string(fmt_double(node.height))
-    buf.write_string("\" rx=\"6\" fill=\"")
+    buf.write_string("\" rx=\"14\" fill=\"")
     buf.write_string(escape_xml(node_fill))
     buf.write_string("\" stroke=\"")
     buf.write_string(escape_xml(node_stroke))
-    buf.write_string("\" stroke-width=\"1.5\"/>")
+    buf.write_string("\" stroke-width=\"1.5\" filter=\"url(#")
+    buf.write_string(shadow_filter_id)
+    buf.write_string(")\"/>")
     let cx = node.x + node.width / 2.0
     let cy = node.y + node.height / 2.0
     buf.write_string("<text x=\"")
     buf.write_string(fmt_double(cx))
     buf.write_string("\" y=\"")
     buf.write_string(fmt_double(cy))
-    buf.write_string("\" font-size=\"13\" fill=\"")
+    buf.write_string("\" font-size=\"16\" fill=\"")
     buf.write_string(escape_xml(text_color))
     buf.write_string(
       "\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-family=\"",
@@ -115,7 +121,7 @@ pub fn render_animated(
     "<button class=\"mm-btn\" data-action=\"prev\" title=\"Previous\">&laquo;</button>",
   )
   buf.write_string(
-    "<button class=\"mm-btn\" data-action=\"play\" title=\"Play\">&#9654;</button>",
+    "<button class=\"mm-play\" data-action=\"play\" title=\"Play\">&#9654;</button>",
   )
   buf.write_string(
     "<button class=\"mm-btn\" data-action=\"next\" title=\"Next\">&raquo;</button>",
@@ -124,7 +130,12 @@ pub fn render_animated(
   buf.write_string(
     (if step_count > 0 { step_count - 1 } else { 0 }).to_string(),
   )
-  buf.write_string("\" value=\"0\" data-action=\"progress\" style=\"flex:1\"/>")
+  buf.write_string(
+    "\" value=\"0\" data-action=\"progress\" class=\"mm-progress\"/>",
+  )
+  buf.write_string(
+    "<span class=\"mm-step\" data-action=\"step-counter\"></span>",
+  )
   buf.write_string(
     "<select data-action=\"speed\"><option value=\"0.5\">0.5x</option><option value=\"1\" selected>1x</option><option value=\"2\">2x</option></select>",
   )

@@ -50,11 +50,13 @@ pub fn emit(node : SvgNode) -> String {
       buf.write_string(fmt_double(width))
       buf.write_char(' ')
       buf.write_string(fmt_double(height))
-      buf.write_string("\">")
+      buf.write_string("\"><defs>")
+      buf.write_string(shadow_filter_def)
+      buf.write_string("</defs>")
       emit_children(buf, children)
       buf.write_string("</svg>")
     }
-    Rect(x~, y~, width~, height~, rx~, fill~, stroke~, stroke_width~) => {
+    Rect(x~, y~, width~, height~, rx~, fill~, stroke~, stroke_width~, filter~) => {
       buf.write_string("<rect x=\"")
       buf.write_string(fmt_double(x))
       buf.write_string("\" y=\"")
@@ -71,6 +73,12 @@ pub fn emit(node : SvgNode) -> String {
       buf.write_string(escape_xml(stroke))
       buf.write_string("\" stroke-width=\"")
       buf.write_string(fmt_double(stroke_width))
+      buf.write_string("\"")
+      if filter.length() > 0 {
+        buf.write_string(" filter=\"url(#")
+        buf.write_string(escape_xml(filter))
+        buf.write_string(")\"")
+      }
       buf.write_string("\"/>")
     }
     Text(x~, y~, content~, font_size~, fill~, anchor~, font_family~) => {

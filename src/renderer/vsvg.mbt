@@ -10,7 +10,8 @@ pub(all) enum SvgNode {
     rx~ : Double,
     fill~ : String,
     stroke~ : String,
-    stroke_width~ : Double
+    stroke_width~ : Double,
+    filter~ : String
   )
   Text(
     x~ : Double,
