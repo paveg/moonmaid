@@ -186,6 +186,43 @@ test "lex integer over max boundary 1000000 raises error" {
 }
 
 ///|
+test "lex array @animate with sort bubble" {
+  let input = "array @animate { [3, 1] sort: bubble }"
+  let tokens = @parser.lex(input)
+  let kinds : Array[@parser.Token] = tokens.map(fn(t) { t.token })
+  assert_eq(kinds, [
+    @parser.Token::TkArray,
+    @parser.Token::At,
+    @parser.Token::TkAnimate,
+    @parser.Token::LBrace,
+    @parser.Token::LBracket,
+    @parser.Token::IntLit(3),
+    @parser.Token::Comma,
+    @parser.Token::IntLit(1),
+    @parser.Token::RBracket,
+    @parser.Token::TkSort,
+    @parser.Token::Colon,
+    @parser.Token::TkBubble,
+    @parser.Token::RBrace,
+    @parser.Token::Eof,
+  ])
+}
+
+///|
+test "lex all sort algorithm keywords" {
+  let bubble = @parser.lex("bubble")
+  assert_eq(bubble[0].token, @parser.Token::TkBubble)
+  let insertion = @parser.lex("insertion")
+  assert_eq(insertion[0].token, @parser.Token::TkInsertion)
+  let selection = @parser.lex("selection")
+  assert_eq(selection[0].token, @parser.Token::TkSelection)
+  let quick = @parser.lex("quick")
+  assert_eq(quick[0].token, @parser.Token::TkQuick)
+  let sort = @parser.lex("sort")
+  assert_eq(sort[0].token, @parser.Token::TkSort)
+}
+
+///|
 /// Boundary: very large integer raises error.
 test "lex very large integer raises error" {
   let result : Result[Array[@parser.Located], Unit] = Ok(

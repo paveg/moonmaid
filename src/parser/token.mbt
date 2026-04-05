@@ -8,6 +8,11 @@ pub(all) enum Token {
   TkInsert
   TkHighlight
   TkAnimate
+  TkSort
+  TkBubble
+  TkInsertion
+  TkSelection
+  TkQuick
   // Literals
   IntLit(Int)
   StringLit(String)
@@ -24,6 +29,7 @@ pub(all) enum Token {
   DotDot // ..
   Eq // =
   Arrow // ->
+  Colon // :
   // Special
   Eof
 } derive(Show, Eq)

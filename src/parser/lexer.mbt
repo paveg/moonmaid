@@ -103,6 +103,11 @@ fn keyword_token(s : String) -> Token? {
     "insert" => Some(TkInsert)
     "highlight" => Some(TkHighlight)
     "animate" => Some(TkAnimate)
+    "sort" => Some(TkSort)
+    "bubble" => Some(TkBubble)
+    "insertion" => Some(TkInsertion)
+    "selection" => Some(TkSelection)
+    "quick" => Some(TkQuick)
     _ => None
   }
 }
@@ -193,6 +198,10 @@ fn Lexer::next_token(self : Lexer) -> Located raise @types.MoonmaidError {
     Some(',') => {
       self.advance()
       Comma
+    }
+    Some(':') => {
+      self.advance()
+      Colon
     }
     Some('=') => {
       self.advance()
