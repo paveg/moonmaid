@@ -143,6 +143,7 @@ let arrow_offset : Double = 8.0
 ///|
 /// Clip to the nearest boundary edge CENTER based on approach direction.
 /// Used for source endpoints — always exits from the center of the chosen edge.
+/// For diamond nodes, snaps to the nearest diamond vertex instead of a rect edge center.
 fn clip_to_boundary_center(
   rx : Double,
   ry : Double,
@@ -150,6 +151,7 @@ fn clip_to_boundary_center(
   rh : Double,
   ext_x : Double,
   ext_y : Double,
+  is_diamond : Bool,
 ) -> (Double, Double) {
   let cx = rx + rw / 2.0
   let cy = ry + rh / 2.0
@@ -157,7 +159,27 @@ fn clip_to_boundary_center(
   let dy = ext_y - cy
   let adx = if dx < 0.0 { -dx } else { dx }
   let ady = if dy < 0.0 { -dy } else { dy }
-  if adx * rh > ady * rw {
+  if is_diamond {
+    // Diamond vertices: top, right, bottom, left
+    // Right/left extend 0.6 * width from center (matching render_graph.mbt)
+    let half_w = rw * 0.6
+    let half_h = rh / 2.0
+    if adx * half_h > ady * half_w {
+      if dx > 0.0 {
+        (cx + half_w, cy)
+      } else {
+        (cx - half_w, cy)
+      }
+    } else if ady > 0.001 {
+      if dy > 0.0 {
+        (cx, cy + half_h)
+      } else {
+        (cx, cy - half_h)
+      }
+    } else {
+      (cx + half_w, cy)
+    }
+  } else if adx * rh > ady * rw {
     if dx > 0.0 {
       (rx + rw, cy)
     } else {
@@ -177,6 +199,8 @@ fn clip_to_boundary_center(
 ///|
 /// Clip to the precise boundary intersection point based on approach direction.
 /// Used for target endpoints — arrow should point exactly where the line meets the edge.
+/// For diamond nodes, snaps to the nearest diamond vertex with the given offset applied
+/// along the approach direction.
 fn clip_to_boundary(
   rx : Double,
   ry : Double,
@@ -185,6 +209,7 @@ fn clip_to_boundary(
   ext_x : Double,
   ext_y : Double,
   offset : Double,
+  is_diamond : Bool,
 ) -> (Double, Double) {
   let cx = rx + rw / 2.0
   let cy = ry + rh / 2.0
@@ -192,7 +217,26 @@ fn clip_to_boundary(
   let dy = ext_y - cy
   let adx = if dx < 0.0 { -dx } else { dx }
   let ady = if dy < 0.0 { -dy } else { dy }
-  if adx * rh > ady * rw {
+  if is_diamond {
+    // Diamond vertices with offset applied outward along the dominant axis
+    let half_w = rw * 0.6
+    let half_h = rh / 2.0
+    if adx * half_h > ady * half_w {
+      if dx > 0.0 {
+        (cx + half_w + offset, cy)
+      } else {
+        (cx - half_w - offset, cy)
+      }
+    } else if ady > 0.001 {
+      if dy > 0.0 {
+        (cx, cy + half_h + offset)
+      } else {
+        (cx, cy - half_h - offset)
+      }
+    } else {
+      (cx + half_w + offset, cy)
+    }
+  } else if adx * rh > ady * rw {
     if dx > 0.0 {
       (rx + rw + offset, cy + dy * (rw / 2.0) / adx)
     } else {
@@ -246,7 +290,11 @@ fn convert_result(
   for node in nodes {
     node_map[node.id] = node
   }
-  let is_lr = def.direction == FlowLR
+  // Build shape lookup so clip functions know which nodes are diamonds
+  let shape_map_early : Map[String, @types.NodeShape] = {}
+  for node in def.nodes {
+    shape_map_early[node.id] = node.shape
+  }
   let positioned_edges : Array[@types.PositionedEdge] = []
   for edge in laid_out.edges {
     let points : Array[(Double, Double)] = []
@@ -260,6 +308,7 @@ fn convert_result(
       match node_map.get(edge.src_id) {
         Some(src) => {
           let next = points[1]
+          let is_dia = shape_map_early.get(edge.src_id) == Some(Diamond)
           points[0] = clip_to_boundary_center(
             src.x,
             src.y,
@@ -267,6 +316,7 @@ fn convert_result(
             src.height,
             next.0,
             next.1,
+            is_dia,
           )
         }
         None => ()
@@ -276,6 +326,7 @@ fn convert_result(
       match node_map.get(edge.dst_id) {
         Some(tgt) => {
           let prev = points[last - 1] // direction the edge comes from
+          let is_dia = shape_map_early.get(edge.dst_id) == Some(Diamond)
           points[last] = clip_to_boundary(
             tgt.x,
             tgt.y,
@@ -284,6 +335,7 @@ fn convert_result(
             prev.0,
             prev.1,
             arrow_offset,
+            is_dia,
           )
         }
         None => ()
