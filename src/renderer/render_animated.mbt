@@ -23,7 +23,7 @@ pub fn render_animated(
 
   // Style block
   buf.write_string(
-    "<style>.moonmaid-animated{border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}.mm-btn{background:none;border:1px solid #e2e8f0;border-radius:8px;padding:2px 8px;cursor:pointer;font-size:14px;color:#64748b}.mm-btn:hover{background:#f1f5f9;color:#334155}.mm-play{background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:2px 8px;cursor:pointer;font-size:14px}.mm-play:hover{background:#2563eb}.moonmaid-controls{display:flex;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid #e2e8f0;background:#ffffff}.moonmaid-description{padding:8px 12px;font-size:13px;color:#64748b;min-height:24px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.mm-step{font-size:12px;color:#94a3b8}.mm-progress{flex:1;height:4px;-webkit-appearance:none;appearance:none;background:#e2e8f0;border-radius:2px;outline:none}.mm-progress::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#3b82f6;cursor:pointer}.mm-progress::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#3b82f6;cursor:pointer;border:none}</style>",
+    "<style>.moonmaid-animated{border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}.moonmaid-animated svg{display:block;width:100%;height:auto}.moonmaid-controls{display:flex;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid #e2e8f0}.mm-btn{background:none;border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px;color:#64748b;line-height:1}.mm-btn:hover{background:#f1f5f9;color:#334155}.mm-play{background:#3b82f6;color:#fff;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:14px;line-height:1}.mm-play:hover{background:#2563eb}.mm-step{font-size:12px;color:#94a3b8;white-space:nowrap}.mm-progress{flex:1;height:4px;-webkit-appearance:none;appearance:none;background:#e2e8f0;border-radius:2px;outline:none}.mm-progress::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#3b82f6;cursor:pointer}.mm-progress::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#3b82f6;cursor:pointer;border:none}.mm-speed{border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:12px;color:#64748b;background:transparent;cursor:pointer}.moonmaid-description{padding:8px 16px;font-size:13px;color:#64748b;min-height:24px}</style>",
   )
 
   // SVG with data-node-id and data-edge-id attributes
@@ -35,7 +35,7 @@ pub fn render_animated(
   buf.write_string(fmt_double(svg_width))
   buf.write_string(" ")
   buf.write_string(fmt_double(svg_height))
-  buf.write_string("\">")
+  buf.write_string("\" style=\"max-width:100%;height:auto\">")
 
   // Shadow filter defs
   buf.write_string("<defs>")
@@ -101,7 +101,7 @@ pub fn render_animated(
     buf.write_string(fmt_double(cx))
     buf.write_string("\" y=\"")
     buf.write_string(fmt_double(cy))
-    buf.write_string("\" font-size=\"16\" fill=\"")
+    buf.write_string("\" font-size=\"14\" fill=\"")
     buf.write_string(escape_xml(text_color))
     buf.write_string(
       "\" text-anchor=\"middle\" dominant-baseline=\"middle\" font-family=\"",
@@ -137,7 +137,7 @@ pub fn render_animated(
     "<span class=\"mm-step\" data-action=\"step-counter\"></span>",
   )
   buf.write_string(
-    "<select data-action=\"speed\"><option value=\"0.5\">0.5x</option><option value=\"1\" selected>1x</option><option value=\"2\">2x</option></select>",
+    "<select class=\"mm-speed\" data-action=\"speed\"><option value=\"0.5\">0.5x</option><option value=\"1\" selected>1x</option><option value=\"2\">2x</option></select>",
   )
   buf.write_string("</div>")
 
@@ -148,7 +148,7 @@ pub fn render_animated(
   buf.write_string("<script>(function(){var timeline=")
   buf.write_string(timeline_json)
   buf.write_string(
-    ";var root=document.currentScript.parentElement;var desc=root.querySelector('.moonmaid-description');var progress=root.querySelector('[data-action=progress]');var idx=-1,timer=null,speed=1;function goTo(n){idx=Math.max(-1,Math.min(n,timeline.steps.length-1));progress.value=Math.max(0,idx);desc.textContent=idx>=0?timeline.steps[idx].description:'';}function tick(){if(idx<timeline.steps.length-1){goTo(idx+1);}else{pause();}}function play(){pause();var ms=idx>=0&&idx<timeline.steps.length?timeline.steps[idx].duration_ms:400;timer=setInterval(tick,ms/speed);}function pause(){if(timer){clearInterval(timer);timer=null;}}root.querySelector('[data-action=prev]').addEventListener('click',function(){pause();goTo(idx-1);});root.querySelector('[data-action=play]').addEventListener('click',function(){if(timer){pause();}else{play();}});root.querySelector('[data-action=next]').addEventListener('click',function(){pause();goTo(idx+1);});progress.addEventListener('input',function(){pause();goTo(parseInt(progress.value));});root.querySelector('[data-action=speed]').addEventListener('change',function(e){speed=parseFloat(e.target.value);if(timer){play();}});})()</script>",
+    ";var root=document.currentScript.parentElement;var desc=root.querySelector('.moonmaid-description');var progress=root.querySelector('[data-action=progress]');var counter=root.querySelector('[data-action=step-counter]');var playBtn=root.querySelector('[data-action=play]');var idx=-1,timer=null,speed=1;function goTo(n){idx=Math.max(-1,Math.min(n,timeline.steps.length-1));progress.value=Math.max(0,idx);desc.textContent=idx>=0?timeline.steps[idx].description:'';counter.textContent=timeline.steps.length>0?(Math.max(0,idx+1))+'/'+timeline.steps.length:'';}function tick(){if(idx<timeline.steps.length-1){goTo(idx+1);}else{pause();}}function play(){pause();var ms=idx>=0&&idx<timeline.steps.length?timeline.steps[idx].duration_ms:400;timer=setInterval(tick,ms/speed);playBtn.textContent='\\u23F8';}function pause(){if(timer){clearInterval(timer);timer=null;}playBtn.textContent='\\u25B6';}root.querySelector('[data-action=prev]').addEventListener('click',function(){pause();goTo(idx-1);});playBtn.addEventListener('click',function(){if(timer){pause();}else{play();}});root.querySelector('[data-action=next]').addEventListener('click',function(){pause();goTo(idx+1);});progress.addEventListener('input',function(){pause();goTo(parseInt(progress.value));});root.querySelector('[data-action=speed]').addEventListener('change',function(e){speed=parseFloat(e.target.value);if(timer){play();}});})()</script>",
   )
 
   buf.write_string("</div>")
