@@ -184,22 +184,52 @@ fn convert_result(
     for pt in edge.route {
       points.push((pt.x, pt.y))
     }
-    // Clip first point (source end) to source node boundary
+    // Clip edge endpoints to node boundaries
     if points.length() >= 2 {
-      match node_map.get(edge.src_id) {
+      let src_node = node_map.get(edge.src_id)
+      let tgt_node = node_map.get(edge.dst_id)
+      // Detect backward edge (target is above source in TD, or left of source in LR)
+      let is_backward = match (src_node, tgt_node) {
+        (Some(s), Some(t)) => if is_lr { t.x < s.x } else { t.y < s.y }
+        _ => false
+      }
+      // Clip source (first point)
+      match src_node {
         Some(src) =>
-          if is_lr {
+          if is_backward {
+            // Backward: exit from right side of source
+            if is_lr {
+              points[0] = (src.x, src.y + src.height / 2.0)
+            } else {
+              points[0] = (src.x + src.width, src.y + src.height / 2.0)
+            }
+            // Forward: exit from bottom (TD) or right (LR)
+          } else if is_lr {
             points[0] = (src.x + src.width, src.y + src.height / 2.0)
           } else {
             points[0] = (src.x + src.width / 2.0, src.y + src.height)
           }
         None => ()
       }
-      // Clip last point (target end) to target node boundary, offset by arrow marker
+      // Clip target (last point)
       let last = points.length() - 1
-      match node_map.get(edge.dst_id) {
+      match tgt_node {
         Some(tgt) =>
-          if is_lr {
+          if is_backward {
+            // Backward: enter right side of target
+            if is_lr {
+              points[last] = (
+                tgt.x + tgt.width + arrow_offset,
+                tgt.y + tgt.height / 2.0,
+              )
+            } else {
+              points[last] = (
+                tgt.x + tgt.width + arrow_offset,
+                tgt.y + tgt.height / 2.0,
+              )
+            }
+            // Forward: enter top (TD) or left (LR)
+          } else if is_lr {
             points[last] = (tgt.x - arrow_offset, tgt.y + tgt.height / 2.0)
           } else {
             points[last] = (tgt.x + tgt.width / 2.0, tgt.y - arrow_offset)
