@@ -120,11 +120,8 @@ pub fn layout_with_dagre(
     [],
     None,
   )
-  // Configure diago layout
-  let diago_config = @engine_api.LayoutConfig::with_spacing(
-    config.node_spacing + 40.0,
-    config.level_spacing + 60.0,
-  )
+  // Configure diago layout — use minimal spacing
+  let diago_config = @engine_api.LayoutConfig::with_spacing(30.0, 40.0)
   let direction = to_diago_direction(def.direction)
   // Run Dagre layout
   let laid_out = @engine_api.layout_with_engine(
@@ -138,6 +135,10 @@ pub fn layout_with_dagre(
   // Convert results back to moonmaid types
   convert_result(laid_out, def, config.padding)
 }
+
+///|
+/// Arrow marker size used to offset edge endpoints from node boundaries.
+let arrow_offset : Double = 8.0
 
 ///|
 /// Extract positioned nodes and edges from diago's laid-out GraphInput.
@@ -171,11 +172,40 @@ fn convert_result(
       None => ()
     }
   }
+  // Build node lookup by id for edge clipping
+  let node_map : Map[String, @types.PositionedNode] = {}
+  for node in nodes {
+    node_map[node.id] = node
+  }
+  let is_lr = def.direction == FlowLR
   let positioned_edges : Array[@types.PositionedEdge] = []
   for edge in laid_out.edges {
     let points : Array[(Double, Double)] = []
     for pt in edge.route {
       points.push((pt.x, pt.y))
+    }
+    // Clip first point (source end) to source node boundary
+    if points.length() >= 2 {
+      match node_map.get(edge.src_id) {
+        Some(src) =>
+          if is_lr {
+            points[0] = (src.x + src.width, src.y + src.height / 2.0)
+          } else {
+            points[0] = (src.x + src.width / 2.0, src.y + src.height)
+          }
+        None => ()
+      }
+      // Clip last point (target end) to target node boundary, offset by arrow marker
+      let last = points.length() - 1
+      match node_map.get(edge.dst_id) {
+        Some(tgt) =>
+          if is_lr {
+            points[last] = (tgt.x - arrow_offset, tgt.y + tgt.height / 2.0)
+          } else {
+            points[last] = (tgt.x + tgt.width / 2.0, tgt.y - arrow_offset)
+          }
+        None => ()
+      }
     }
     // Find original label
     let mut label = ""
@@ -192,6 +222,90 @@ fn convert_result(
       label,
     })
   }
-  let bounds = @types.compute_bounds(nodes, padding)
+  // Build shape lookup for diamond expansion
+  let shape_map : Map[String, @types.NodeShape] = {}
+  for node in def.nodes {
+    shape_map[node.id] = node.shape
+  }
+  // Find minimum x/y considering diamond vertex expansion and edge points
+  let mut min_x = 0.0
+  let mut min_y = 0.0
+  for node in nodes {
+    let mut left = node.x
+    match shape_map.get(node.id) {
+      Some(Diamond) =>
+        // Diamond left vertex extends beyond node rect
+        left = node.x - node.width * 0.1
+      _ => ()
+    }
+    if left < min_x {
+      min_x = left
+    }
+    if node.y < min_y {
+      min_y = node.y
+    }
+  }
+  // Include edge points in min bounds (bezier control points may go negative)
+  for edge in positioned_edges {
+    for pt in edge.points {
+      if pt.0 < min_x {
+        min_x = pt.0
+      }
+      if pt.1 < min_y {
+        min_y = pt.1
+      }
+    }
+  }
+  // Shift all coordinates so nothing is negative, plus padding
+  let shift_x = if min_x < padding { padding - min_x } else { 0.0 }
+  let shift_y = if min_y < padding { padding - min_y } else { 0.0 }
+  if shift_x > 0.0 || shift_y > 0.0 {
+    for i = 0; i < nodes.length(); i = i + 1 {
+      let n = nodes[i]
+      nodes[i] = { ..n, x: n.x + shift_x, y: n.y + shift_y }
+    }
+    for i = 0; i < positioned_edges.length(); i = i + 1 {
+      let e = positioned_edges[i]
+      let shifted_points : Array[(Double, Double)] = []
+      for pt in e.points {
+        shifted_points.push((pt.0 + shift_x, pt.1 + shift_y))
+      }
+      positioned_edges[i] = { ..e, points: shifted_points }
+    }
+  }
+  // Compute bounds with extra margin for diamond vertices and edge points
+  let mut max_x = 0.0
+  let mut max_y = 0.0
+  for node in nodes {
+    let mut right = node.x + node.width
+    match shape_map.get(node.id) {
+      Some(Diamond) => right = right + node.width * 0.1
+      _ => ()
+    }
+    if right > max_x {
+      max_x = right
+    }
+    let bottom = node.y + node.height
+    if bottom > max_y {
+      max_y = bottom
+    }
+  }
+  // Expand bounds to include all edge points (bezier control points may exceed node rects)
+  for edge in positioned_edges {
+    for pt in edge.points {
+      if pt.0 > max_x {
+        max_x = pt.0
+      }
+      if pt.1 > max_y {
+        max_y = pt.1
+      }
+    }
+  }
+  let bounds : @types.BoundingBox = {
+    x: 0.0,
+    y: 0.0,
+    width: max_x + padding,
+    height: max_y + padding,
+  }
   { nodes, edges: positioned_edges, bounds }
 }
