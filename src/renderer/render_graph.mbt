@@ -67,32 +67,40 @@ pub fn render_graph(
         "dotted" => "2,4"
         _ => ""
       }
-      // Multi-waypoint edges (e.g., backward edges routed around the diagram)
-      // use rounded polyline paths; simple 2-point edges use smooth bezier curves
-      let path_d = if edge.points.length() > 2 {
-        // Build SVG path with rounded corners through waypoints
+      // Compute edge path and label position
+      let (x1, y1) = edge.points[0]
+      let (x2, y2) = edge.points[edge.points.length() - 1]
+      let (path_d, label_x, label_y) = if edge.points.length() > 2 {
+        // Multi-waypoint: polyline path, label at first segment midpoint
         let buf = StringBuilder::new()
-        let (x0, y0) = edge.points[0]
-        buf.write_string("M \{x0} \{y0}")
+        buf.write_string("M \{x1} \{y1}")
         for pi = 1; pi < edge.points.length(); pi = pi + 1 {
           let (px, py) = edge.points[pi]
           buf.write_string(" L \{px} \{py}")
         }
-        buf.to_string()
+        let (sx, sy) = edge.points[1]
+        (buf.to_string(), (x1 + sx) / 2.0, (y1 + sy) / 2.0)
       } else {
-        let (x1, y1) = edge.points[0]
-        let (x2, y2) = edge.points[edge.points.length() - 1]
         let dx = (x2 - x1).abs()
         let dy = (y2 - y1).abs()
-        // Control points: gentle S-curve
         let (cx1, cy1, cx2, cy2) = if dy > dx {
-          // Mostly vertical (TD layout) — curve horizontally
           (x1, y1 + dy * 0.4, x2, y2 - dy * 0.4)
         } else {
-          // Mostly horizontal (LR layout) — curve vertically
           (x1 + dx * 0.4, y1, x2 - dx * 0.4, y2)
         }
-        "M \{x1} \{y1} C \{cx1} \{cy1}, \{cx2} \{cy2}, \{x2} \{y2}"
+        let d = "M \{x1} \{y1} C \{cx1} \{cy1}, \{cx2} \{cy2}, \{x2} \{y2}"
+        // Cubic bezier at t=0.3: B(t) = (1-t)³P0 + 3(1-t)²tP1 + 3(1-t)t²P2 + t³P3
+        let t = 0.3
+        let u = 1.0 - t
+        let lx = u * u * u * x1 +
+          3.0 * u * u * t * cx1 +
+          3.0 * u * t * t * cx2 +
+          t * t * t * x2
+        let ly = u * u * u * y1 +
+          3.0 * u * u * t * cy1 +
+          3.0 * u * t * t * cy2 +
+          t * t * t * y2
+        (d, lx, ly)
       }
       children.push(
         Path(
@@ -113,11 +121,8 @@ pub fn render_graph(
         }
       }
       if effective_label.length() > 0 {
-        // Position label at 35% from source (biased away from target node)
-        let (x1, y1) = edge.points[0]
-        let (x2, y2) = edge.points[edge.points.length() - 1]
-        let mx = x1 + (x2 - x1) * 0.35
-        let my = y1 + (y2 - y1) * 0.35
+        let mx = label_x
+        let my = label_y
         // White background rect behind label
         let label_width = effective_label.length().to_double() * 8.0 + 16.0
         let label_height = 20.0
