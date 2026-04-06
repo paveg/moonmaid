@@ -141,6 +141,51 @@ pub fn layout_with_dagre(
 let arrow_offset : Double = 8.0
 
 ///|
+/// Clip a point to the nearest boundary of a rectangle, given an external
+/// approach point (ext_x, ext_y). Returns the point on the rectangle edge
+/// closest to the approach direction, offset outward by `offset` pixels.
+fn clip_to_boundary(
+  rx : Double,
+  ry : Double,
+  rw : Double,
+  rh : Double,
+  ext_x : Double,
+  ext_y : Double,
+  offset : Double,
+) -> (Double, Double) {
+  let cx = rx + rw / 2.0
+  let cy = ry + rh / 2.0
+  let dx = ext_x - cx
+  let dy = ext_y - cy
+  // Determine which edge the approach line crosses
+  // Use the aspect-ratio test: compare dx/rw vs dy/rh
+  let adx = if dx < 0.0 { -dx } else { dx }
+  let ady = if dy < 0.0 { -dy } else { dy }
+  if adx * rh > ady * rw {
+    // Crosses left or right edge
+    if dx > 0.0 {
+      // Right edge
+      (rx + rw + offset, cy + dy * (rw / 2.0) / adx)
+    } else {
+      // Left edge
+      (rx - offset, cy - dy * (rw / 2.0) / adx)
+    }
+  } else if ady > 0.001 {
+    // Crosses top or bottom edge
+    if dy > 0.0 {
+      // Bottom edge
+      (cx + dx * (rh / 2.0) / ady, ry + rh + offset)
+    } else {
+      // Top edge
+      (cx - dx * (rh / 2.0) / ady, ry - offset)
+    }
+  } else {
+    // Degenerate: approach from same y-level, default to right
+    (rx + rw + offset, cy)
+  }
+}
+
+///|
 /// Extract positioned nodes and edges from diago's laid-out GraphInput.
 fn convert_result(
   laid_out : @diago_graph.GraphInput,
@@ -184,56 +229,40 @@ fn convert_result(
     for pt in edge.route {
       points.push((pt.x, pt.y))
     }
-    // Clip edge endpoints to node boundaries
+    // Clip edge endpoints to the nearest node boundary based on approach direction.
+    // Uses the second/second-to-last Dagre waypoint to determine approach vector.
     if points.length() >= 2 {
-      let src_node = node_map.get(edge.src_id)
-      let tgt_node = node_map.get(edge.dst_id)
-      // Detect backward edge (target is above source in TD, or left of source in LR)
-      let is_backward = match (src_node, tgt_node) {
-        (Some(s), Some(t)) => if is_lr { t.x < s.x } else { t.y < s.y }
-        _ => false
-      }
-      // Clip source (first point)
-      match src_node {
-        Some(src) =>
-          if is_backward {
-            // Backward: exit from right side of source
-            if is_lr {
-              points[0] = (src.x, src.y + src.height / 2.0)
-            } else {
-              points[0] = (src.x + src.width, src.y + src.height / 2.0)
-            }
-            // Forward: exit from bottom (TD) or right (LR)
-          } else if is_lr {
-            points[0] = (src.x + src.width, src.y + src.height / 2.0)
-          } else {
-            points[0] = (src.x + src.width / 2.0, src.y + src.height)
-          }
+      // Clip source (first point): find where edge exits the source node
+      match node_map.get(edge.src_id) {
+        Some(src) => {
+          let next = points[1] // direction the edge heads toward
+          points[0] = clip_to_boundary(
+            src.x,
+            src.y,
+            src.width,
+            src.height,
+            next.0,
+            next.1,
+            0.0,
+          )
+        }
         None => ()
       }
-      // Clip target (last point)
+      // Clip target (last point): find where edge enters the target node
       let last = points.length() - 1
-      match tgt_node {
-        Some(tgt) =>
-          if is_backward {
-            // Backward: enter right side of target
-            if is_lr {
-              points[last] = (
-                tgt.x + tgt.width + arrow_offset,
-                tgt.y + tgt.height / 2.0,
-              )
-            } else {
-              points[last] = (
-                tgt.x + tgt.width + arrow_offset,
-                tgt.y + tgt.height / 2.0,
-              )
-            }
-            // Forward: enter top (TD) or left (LR)
-          } else if is_lr {
-            points[last] = (tgt.x - arrow_offset, tgt.y + tgt.height / 2.0)
-          } else {
-            points[last] = (tgt.x + tgt.width / 2.0, tgt.y - arrow_offset)
-          }
+      match node_map.get(edge.dst_id) {
+        Some(tgt) => {
+          let prev = points[last - 1] // direction the edge comes from
+          points[last] = clip_to_boundary(
+            tgt.x,
+            tgt.y,
+            tgt.width,
+            tgt.height,
+            prev.0,
+            prev.1,
+            arrow_offset,
+          )
+        }
         None => ()
       }
     }
