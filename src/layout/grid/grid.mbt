@@ -53,6 +53,16 @@ pub fn layout(
       label: i.to_string(),
     }
   }
-  let bounds = @types.compute_bounds(nodes, config.padding)
+  // Extra horizontal margin to prevent highlight labels from extending beyond SVG bounds.
+  // Extra vertical margin for highlight label text rendered below the index row.
+  let label_margin = 40.0
+  let label_row_height = 30.0
+  let raw_bounds = @types.compute_bounds(nodes, config.padding)
+  let bounds : @types.BoundingBox = {
+    x: raw_bounds.x,
+    y: raw_bounds.y,
+    width: raw_bounds.width + label_margin * 2.0,
+    height: raw_bounds.height + label_row_height,
+  }
   { nodes, edges: [], bounds }
 }

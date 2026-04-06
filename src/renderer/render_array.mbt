@@ -121,6 +121,59 @@ pub fn render_array(
     }
   }
 
+  // Render highlight labels below the index row
+  // Find idx_y by looking up any idx node position
+  let mut idx_bottom = 0.0
+  for ni = 0; ni < graph.nodes.length(); ni = ni + 1 {
+    let node = graph.nodes[ni]
+    if node.id.has_prefix("idx_") {
+      let bottom = node.y + node.height
+      if bottom > idx_bottom {
+        idx_bottom = bottom
+      }
+    }
+  }
+  let highlight_label_y = idx_bottom + 14.0
+  for h = 0; h < def.highlights.length(); h = h + 1 {
+    let hi = def.highlights[h]
+    if hi.label.length() > 0 {
+      // Find the center x of the highlighted range
+      let mut range_min_x = -1.0
+      let mut range_max_x = -1.0
+      for ni = 0; ni < graph.nodes.length(); ni = ni + 1 {
+        let node = graph.nodes[ni]
+        if node.id.has_prefix("elem_") {
+          let idx_str = node.id[5:].to_string()
+          let elem_idx = parse_int(idx_str)
+          if elem_idx >= hi.start && elem_idx <= hi.end {
+            if range_min_x < 0.0 || node.x < range_min_x {
+              range_min_x = node.x
+            }
+            let right = node.x + node.width
+            if right > range_max_x {
+              range_max_x = right
+            }
+          }
+        }
+      }
+      if range_min_x >= 0.0 {
+        let cx = (range_min_x + range_max_x) / 2.0
+        let resolved = resolve_highlight_style(hi.color)
+        children.push(
+          Text(
+            x=cx,
+            y=highlight_label_y,
+            content=hi.label,
+            font_size=11.0,
+            fill=resolved.text_color,
+            anchor="middle",
+            font_family=font_mono,
+          ),
+        )
+      }
+    }
+  }
+
   Svg(width=svg_width, height=svg_height, children~)
 }
 

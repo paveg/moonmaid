@@ -113,14 +113,14 @@ pub fn render_graph(
         }
       }
       if effective_label.length() > 0 {
-        // Compute actual midpoint between first and last points
+        // Position label at 35% from source (biased away from target node)
         let (x1, y1) = edge.points[0]
         let (x2, y2) = edge.points[edge.points.length() - 1]
-        let mx = (x1 + x2) / 2.0
-        let my = (y1 + y2) / 2.0
+        let mx = x1 + (x2 - x1) * 0.35
+        let my = y1 + (y2 - y1) * 0.35
         // White background rect behind label
-        let label_width = effective_label.length().to_double() * 8.0 + 8.0
-        let label_height = 16.0
+        let label_width = effective_label.length().to_double() * 8.0 + 16.0
+        let label_height = 20.0
         children.push(
           Rect(
             x=mx - label_width / 2.0,
