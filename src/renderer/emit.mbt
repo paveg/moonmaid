@@ -112,7 +112,16 @@ pub fn emit(node : SvgNode) -> String {
       emit_children(buf, children)
       buf.write_string("</marker>")
     }
-    Path(d~, fill~, stroke~, stroke_width~, marker_end~, dash_array~) => {
+    Path(
+      d~,
+      fill~,
+      stroke~,
+      stroke_width~,
+      marker_end~,
+      dash_array~,
+      stroke_linecap~,
+      stroke_linejoin~
+    ) => {
       buf.write_string("<path d=\"")
       buf.write_string(escape_xml(d))
       buf.write_string("\" fill=\"")
@@ -133,6 +142,16 @@ pub fn emit(node : SvgNode) -> String {
       if dash_array.length() > 0 {
         buf.write_string(" stroke-dasharray=\"")
         buf.write_string(escape_xml(dash_array))
+        buf.write_string("\"")
+      }
+      if stroke_linecap.length() > 0 {
+        buf.write_string(" stroke-linecap=\"")
+        buf.write_string(escape_xml(stroke_linecap))
+        buf.write_string("\"")
+      }
+      if stroke_linejoin.length() > 0 {
+        buf.write_string(" stroke-linejoin=\"")
+        buf.write_string(escape_xml(stroke_linejoin))
         buf.write_string("\"")
       }
       buf.write_string("/>")

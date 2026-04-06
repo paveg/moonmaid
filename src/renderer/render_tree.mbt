@@ -32,6 +32,8 @@ pub fn render_tree(graph : @types.PositionedGraph) -> SvgNode {
     stroke_width=0.0,
     marker_end="",
     dash_array="",
+    stroke_linecap="",
+    stroke_linejoin="",
   )
   let marker = Marker(id="arrow", children=[arrow_path])
   children.push(Defs(children=[marker]))
@@ -52,6 +54,8 @@ pub fn render_tree(graph : @types.PositionedGraph) -> SvgNode {
           stroke_width=1.5,
           marker_end="arrow",
           dash_array="",
+          stroke_linecap="round",
+          stroke_linejoin="round",
         ),
       )
     }

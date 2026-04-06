@@ -30,7 +30,9 @@ pub(all) enum SvgNode {
     stroke~ : String,
     stroke_width~ : Double,
     marker_end~ : String,
-    dash_array~ : String
+    dash_array~ : String,
+    stroke_linecap~ : String,
+    stroke_linejoin~ : String
   )
   Polyline(
     points~ : Array[(Double, Double)],
