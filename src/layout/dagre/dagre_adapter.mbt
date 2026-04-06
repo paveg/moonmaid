@@ -141,9 +141,42 @@ pub fn layout_with_dagre(
 let arrow_offset : Double = 8.0
 
 ///|
-/// Clip a point to the nearest boundary of a rectangle, given an external
-/// approach point (ext_x, ext_y). Returns the point on the rectangle edge
-/// closest to the approach direction, offset outward by `offset` pixels.
+/// Clip to the nearest boundary edge CENTER based on approach direction.
+/// Used for source endpoints — always exits from the center of the chosen edge.
+fn clip_to_boundary_center(
+  rx : Double,
+  ry : Double,
+  rw : Double,
+  rh : Double,
+  ext_x : Double,
+  ext_y : Double,
+) -> (Double, Double) {
+  let cx = rx + rw / 2.0
+  let cy = ry + rh / 2.0
+  let dx = ext_x - cx
+  let dy = ext_y - cy
+  let adx = if dx < 0.0 { -dx } else { dx }
+  let ady = if dy < 0.0 { -dy } else { dy }
+  if adx * rh > ady * rw {
+    if dx > 0.0 {
+      (rx + rw, cy)
+    } else {
+      (rx, cy)
+    }
+  } else if ady > 0.001 {
+    if dy > 0.0 {
+      (cx, ry + rh)
+    } else {
+      (cx, ry)
+    }
+  } else {
+    (rx + rw, cy)
+  }
+}
+
+///|
+/// Clip to the precise boundary intersection point based on approach direction.
+/// Used for target endpoints — arrow should point exactly where the line meets the edge.
 fn clip_to_boundary(
   rx : Double,
   ry : Double,
@@ -157,30 +190,21 @@ fn clip_to_boundary(
   let cy = ry + rh / 2.0
   let dx = ext_x - cx
   let dy = ext_y - cy
-  // Determine which edge the approach line crosses
-  // Use the aspect-ratio test: compare dx/rw vs dy/rh
   let adx = if dx < 0.0 { -dx } else { dx }
   let ady = if dy < 0.0 { -dy } else { dy }
   if adx * rh > ady * rw {
-    // Crosses left or right edge
     if dx > 0.0 {
-      // Right edge
       (rx + rw + offset, cy + dy * (rw / 2.0) / adx)
     } else {
-      // Left edge
       (rx - offset, cy - dy * (rw / 2.0) / adx)
     }
   } else if ady > 0.001 {
-    // Crosses top or bottom edge
     if dy > 0.0 {
-      // Bottom edge
       (cx + dx * (rh / 2.0) / ady, ry + rh + offset)
     } else {
-      // Top edge
       (cx - dx * (rh / 2.0) / ady, ry - offset)
     }
   } else {
-    // Degenerate: approach from same y-level, default to right
     (rx + rw + offset, cy)
   }
 }
@@ -232,18 +256,17 @@ fn convert_result(
     // Clip edge endpoints to the nearest node boundary based on approach direction.
     // Uses the second/second-to-last Dagre waypoint to determine approach vector.
     if points.length() >= 2 {
-      // Clip source (first point): find where edge exits the source node
+      // Clip source (first point): exit from center of nearest edge
       match node_map.get(edge.src_id) {
         Some(src) => {
-          let next = points[1] // direction the edge heads toward
-          points[0] = clip_to_boundary(
+          let next = points[1]
+          points[0] = clip_to_boundary_center(
             src.x,
             src.y,
             src.width,
             src.height,
             next.0,
             next.1,
-            0.0,
           )
         }
         None => ()
