@@ -21,6 +21,7 @@ fn elem_id(i : Int) -> String {
 
 ///|
 /// Generate bubble sort animation steps.
+/// Each comparison is a single merged step (highlight, compare, swap/no-swap, unhighlight).
 fn generate_bubble_sort(elements : Array[Int]) -> @types.AnimationTimeline {
   let n = elements.length()
   if n <= 1 {
@@ -33,41 +34,47 @@ fn generate_bubble_sort(elements : Array[Int]) -> @types.AnimationTimeline {
     for j = 0; j < n - 1 - i; j = j + 1 {
       let id_j = elem_id(j)
       let id_j1 = elem_id(j + 1)
-      // Highlight pair for comparison
-      steps.push({
-        actions: [
-          Highlight(node_id=id_j, color="blue"),
-          Highlight(node_id=id_j1, color="blue"),
-          CompareNodes(a=id_j, b=id_j1),
-        ],
-        description: "Compare \{arr[j]} and \{arr[j + 1]}",
-        duration_ms: 300,
-      })
+      let val_j = arr[j]
+      let val_j1 = arr[j + 1]
       if arr[j] > arr[j + 1] {
-        // Swap
+        // Swap needed
         let tmp = arr[j]
         arr[j] = arr[j + 1]
         arr[j + 1] = tmp
         steps.push({
-          actions: [SwapNodes(a=id_j, b=id_j1)],
-          description: "Swap \{arr[j + 1]} and \{arr[j]}",
-          duration_ms: 400,
+          actions: [
+            Highlight(node_id=id_j, color="blue"),
+            Highlight(node_id=id_j1, color="blue"),
+            CompareNodes(a=id_j, b=id_j1),
+            SwapNodes(a=id_j, b=id_j1),
+            Unhighlight(node_id=id_j),
+            Unhighlight(node_id=id_j1),
+          ],
+          description: "Compare \{val_j} and \{val_j1} \u{2192} Swap",
+          duration_ms: 500,
         })
         swapped = true
+      } else {
+        // No swap needed
+        steps.push({
+          actions: [
+            Highlight(node_id=id_j, color="blue"),
+            Highlight(node_id=id_j1, color="blue"),
+            CompareNodes(a=id_j, b=id_j1),
+            Unhighlight(node_id=id_j),
+            Unhighlight(node_id=id_j1),
+          ],
+          description: "Compare \{val_j} and \{val_j1} \u{2192} No swap",
+          duration_ms: 500,
+        })
       }
-      // Unhighlight pair
-      steps.push({
-        actions: [Unhighlight(node_id=id_j), Unhighlight(node_id=id_j1)],
-        description: "Unhighlight",
-        duration_ms: 100,
-      })
     }
     // Mark sorted position
     let sorted_idx = n - 1 - i
     steps.push({
       actions: [Highlight(node_id=elem_id(sorted_idx), color="green")],
       description: "\{arr[sorted_idx]} is in sorted position",
-      duration_ms: 200,
+      duration_ms: 300,
     })
     if not(swapped) {
       // Already sorted, mark remaining as green
@@ -75,7 +82,7 @@ fn generate_bubble_sort(elements : Array[Int]) -> @types.AnimationTimeline {
         steps.push({
           actions: [Highlight(node_id=elem_id(k), color="green")],
           description: "\{arr[k]} is in sorted position",
-          duration_ms: 100,
+          duration_ms: 300,
         })
       }
       break
@@ -92,7 +99,7 @@ fn generate_bubble_sort(elements : Array[Int]) -> @types.AnimationTimeline {
       steps.push({
         actions: [Highlight(node_id=elem_id(0), color="green")],
         description: "\{arr[0]} is in sorted position",
-        duration_ms: 200,
+        duration_ms: 300,
       })
     }
   }
@@ -101,6 +108,7 @@ fn generate_bubble_sort(elements : Array[Int]) -> @types.AnimationTimeline {
 
 ///|
 /// Generate insertion sort animation steps.
+/// Each compare-and-shift is a single merged step.
 fn generate_insertion_sort(elements : Array[Int]) -> @types.AnimationTimeline {
   let n = elements.length()
   if n <= 1 {
@@ -112,7 +120,7 @@ fn generate_insertion_sort(elements : Array[Int]) -> @types.AnimationTimeline {
   steps.push({
     actions: [Highlight(node_id=elem_id(0), color="green")],
     description: "\{arr[0]} is initially sorted",
-    duration_ms: 200,
+    duration_ms: 300,
   })
   for i = 1; i < n; i = i + 1 {
     let key = arr[i]
@@ -126,23 +134,21 @@ fn generate_insertion_sort(elements : Array[Int]) -> @types.AnimationTimeline {
     while j > 0 && arr[j - 1] > key {
       let id_j = elem_id(j)
       let id_j1 = elem_id(j - 1)
-      // Compare with left neighbor
-      steps.push({
-        actions: [
-          Highlight(node_id=id_j1, color="blue"),
-          CompareNodes(a=id_j, b=id_j1),
-        ],
-        description: "Compare \{key} with \{arr[j - 1]}",
-        duration_ms: 300,
-      })
-      // Shift right via swap
+      let neighbor = arr[j - 1]
+      // Compare and shift in one step
       let tmp = arr[j]
       arr[j] = arr[j - 1]
       arr[j - 1] = tmp
       steps.push({
-        actions: [SwapNodes(a=id_j, b=id_j1), Unhighlight(node_id=id_j)],
-        description: "Shift \{arr[j]} right",
-        duration_ms: 400,
+        actions: [
+          Highlight(node_id=id_j1, color="blue"),
+          CompareNodes(a=id_j, b=id_j1),
+          SwapNodes(a=id_j, b=id_j1),
+          Unhighlight(node_id=id_j),
+          Unhighlight(node_id=id_j1),
+        ],
+        description: "Compare \{key} with \{neighbor} \u{2192} Shift right",
+        duration_ms: 500,
       })
       j = j - 1
     }
@@ -150,7 +156,7 @@ fn generate_insertion_sort(elements : Array[Int]) -> @types.AnimationTimeline {
     steps.push({
       actions: [Highlight(node_id=elem_id(j), color="green")],
       description: "\{key} placed at position \{j}",
-      duration_ms: 200,
+      duration_ms: 300,
     })
   }
   { steps, }
@@ -158,6 +164,7 @@ fn generate_insertion_sort(elements : Array[Int]) -> @types.AnimationTimeline {
 
 ///|
 /// Generate selection sort animation steps.
+/// Each comparison is merged into a single step.
 fn generate_selection_sort(elements : Array[Int]) -> @types.AnimationTimeline {
   let n = elements.length()
   if n <= 1 {
@@ -171,39 +178,38 @@ fn generate_selection_sort(elements : Array[Int]) -> @types.AnimationTimeline {
     steps.push({
       actions: [Highlight(node_id=elem_id(i), color="yellow")],
       description: "Find minimum starting at index \{i}",
-      duration_ms: 200,
+      duration_ms: 300,
     })
     for j = i + 1; j < n; j = j + 1 {
       let id_j = elem_id(j)
-      // Highlight candidate
-      steps.push({
-        actions: [
-          Highlight(node_id=id_j, color="blue"),
-          CompareNodes(a=id_j, b=elem_id(min_idx)),
-        ],
-        description: "Compare \{arr[j]} with minimum \{arr[min_idx]}",
-        duration_ms: 300,
-      })
       if arr[j] < arr[min_idx] {
-        // New minimum found
+        // New minimum found: compare, unhighlight old min, highlight new min
+        let old_min_id = elem_id(min_idx)
         steps.push({
           actions: [
-            Unhighlight(node_id=elem_id(min_idx)),
+            Highlight(node_id=id_j, color="blue"),
+            CompareNodes(a=id_j, b=old_min_id),
+            Unhighlight(node_id=old_min_id),
             Highlight(node_id=id_j, color="yellow"),
           ],
-          description: "New minimum: \{arr[j]}",
-          duration_ms: 200,
+          description: "Compare \{arr[j]} with minimum \{arr[min_idx]} \u{2192} New minimum: \{arr[j]}",
+          duration_ms: 500,
         })
         min_idx = j
       } else {
+        // Not smaller: compare and unhighlight
         steps.push({
-          actions: [Unhighlight(node_id=id_j)],
-          description: "\{arr[j]} is not smaller",
-          duration_ms: 100,
+          actions: [
+            Highlight(node_id=id_j, color="blue"),
+            CompareNodes(a=id_j, b=elem_id(min_idx)),
+            Unhighlight(node_id=id_j),
+          ],
+          description: "Compare \{arr[j]} with minimum \{arr[min_idx]} \u{2192} Not smaller",
+          duration_ms: 500,
         })
       }
     }
-    // Swap minimum into position
+    // Swap minimum into position (or note already in place)
     if min_idx != i {
       let tmp = arr[i]
       arr[i] = arr[min_idx]
@@ -212,29 +218,27 @@ fn generate_selection_sort(elements : Array[Int]) -> @types.AnimationTimeline {
         actions: [
           SwapNodes(a=elem_id(i), b=elem_id(min_idx)),
           Unhighlight(node_id=elem_id(min_idx)),
+          Highlight(node_id=elem_id(i), color="green"),
         ],
         description: "Swap minimum \{arr[i]} into position \{i}",
-        duration_ms: 400,
+        duration_ms: 500,
       })
     } else {
       steps.push({
-        actions: [Unhighlight(node_id=elem_id(i))],
+        actions: [
+          Unhighlight(node_id=elem_id(i)),
+          Highlight(node_id=elem_id(i), color="green"),
+        ],
         description: "\{arr[i]} already in position",
-        duration_ms: 100,
+        duration_ms: 300,
       })
     }
-    // Mark sorted
-    steps.push({
-      actions: [Highlight(node_id=elem_id(i), color="green")],
-      description: "\{arr[i]} is in sorted position",
-      duration_ms: 200,
-    })
   }
   // Mark last element as sorted
   steps.push({
     actions: [Highlight(node_id=elem_id(n - 1), color="green")],
     description: "\{arr[n - 1]} is in sorted position",
-    duration_ms: 200,
+    duration_ms: 300,
   })
   { steps, }
 }
@@ -254,6 +258,7 @@ fn generate_quick_sort(elements : Array[Int]) -> @types.AnimationTimeline {
 
 ///|
 /// Recursive quick sort with Lomuto partition scheme.
+/// Each comparison is merged into a single step.
 fn quick_sort_recurse(
   arr : Array[Int],
   low : Int,
@@ -265,7 +270,7 @@ fn quick_sort_recurse(
       steps.push({
         actions: [Highlight(node_id=elem_id(low), color="green")],
         description: "\{arr[low]} is in sorted position",
-        duration_ms: 200,
+        duration_ms: 300,
       })
     }
     return
@@ -284,38 +289,46 @@ fn quick_sort_recurse(
   let mut i = low
   for j = low; j < high; j = j + 1 {
     let id_j = elem_id(j)
-    // Compare element with pivot
-    steps.push({
-      actions: [
-        Highlight(node_id=id_j, color="blue"),
-        CompareNodes(a=id_j, b=pivot_id),
-      ],
-      description: "Compare \{arr[j]} with pivot \{pivot}",
-      duration_ms: 300,
-    })
+    let val_j = arr[j]
     if arr[j] <= pivot {
       if i != j {
-        // Swap arr[i] and arr[j]
+        // Compare, swap to left partition, unhighlight — one step
         let tmp = arr[i]
         arr[i] = arr[j]
         arr[j] = tmp
         steps.push({
-          actions: [SwapNodes(a=elem_id(i), b=id_j)],
-          description: "Swap \{arr[i]} to left partition",
-          duration_ms: 400,
+          actions: [
+            Highlight(node_id=id_j, color="blue"),
+            CompareNodes(a=id_j, b=pivot_id),
+            SwapNodes(a=elem_id(i), b=id_j),
+            Unhighlight(node_id=elem_id(i)),
+          ],
+          description: "Compare \{val_j} \u{2264} pivot \{pivot} \u{2192} Swap to left",
+          duration_ms: 500,
+        })
+      } else {
+        // No swap needed, just compare and advance
+        steps.push({
+          actions: [
+            Highlight(node_id=id_j, color="blue"),
+            CompareNodes(a=id_j, b=pivot_id),
+            Unhighlight(node_id=id_j),
+          ],
+          description: "Compare \{val_j} \u{2264} pivot \{pivot} \u{2192} Left partition",
+          duration_ms: 500,
         })
       }
-      steps.push({
-        actions: [Unhighlight(node_id=elem_id(i))],
-        description: "Advance partition index",
-        duration_ms: 100,
-      })
       i = i + 1
     } else {
+      // Greater than pivot — compare and unhighlight
       steps.push({
-        actions: [Unhighlight(node_id=id_j)],
-        description: "\{arr[j]} stays in right partition",
-        duration_ms: 100,
+        actions: [
+          Highlight(node_id=id_j, color="blue"),
+          CompareNodes(a=id_j, b=pivot_id),
+          Unhighlight(node_id=id_j),
+        ],
+        description: "Compare \{val_j} > pivot \{pivot} \u{2192} Right partition",
+        duration_ms: 500,
       })
     }
   }
@@ -328,23 +341,21 @@ fn quick_sort_recurse(
       actions: [
         SwapNodes(a=elem_id(i), b=pivot_id),
         Unhighlight(node_id=pivot_id),
+        Highlight(node_id=elem_id(i), color="green"),
       ],
       description: "Place pivot \{arr[i]} at position \{i}",
-      duration_ms: 400,
+      duration_ms: 500,
     })
   } else {
     steps.push({
-      actions: [Unhighlight(node_id=pivot_id)],
-      description: "Pivot already in position",
-      duration_ms: 100,
+      actions: [
+        Unhighlight(node_id=pivot_id),
+        Highlight(node_id=elem_id(i), color="green"),
+      ],
+      description: "Pivot \{arr[i]} already in position \{i}",
+      duration_ms: 300,
     })
   }
-  // Mark pivot position as sorted
-  steps.push({
-    actions: [Highlight(node_id=elem_id(i), color="green")],
-    description: "\{arr[i]} is in sorted position",
-    duration_ms: 200,
-  })
   // Recurse on sub-arrays
   if i > low {
     quick_sort_recurse(arr, low, i - 1, steps)
